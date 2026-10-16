@@ -1,0 +1,278 @@
+import { createContext, useCallback, useContext, useMemo, useState } from 'react'
+
+// Presentation-only translations. Changing the language never refetches data; stored
+// error codes are translated at render time with t(`err_${code}`).
+
+const en = {
+  min: 'min', h: 'h', sum: 'UZS', back: 'Back', next: 'Next', save: 'Save', cancel: 'Cancel', close: 'Close', retry: 'Try again',
+  edit: 'Edit', add: 'Add', today: 'Today', tomorrow: 'Tomorrow', or: 'or',
+  demoBanner: 'Demo mode — data is stored only in this browser.', resetDemo: 'Reset demo', poweredBy: 'Booking by Navbat',
+  loadFailed: 'Could not load. Check the connection and try again.',
+
+  err_slot_taken: 'This time was just taken. Please pick another one.',
+  err_name_required: 'Please enter your name.',
+  err_phone_required: 'Please enter a phone number.',
+  err_service_unavailable: 'One of the services is no longer available.',
+  err_date_out_of_range: 'This date is not open for booking.',
+  err_time_passed: 'This time has already passed.',
+  err_outside_hours: 'This time is outside working hours.',
+  err_cannot_cancel: 'This booking can no longer be cancelled.',
+  err_cannot_review: 'Feedback is not available for this visit.',
+  err_too_early: 'You can leave feedback after your visit.',
+  err_already_reviewed: 'You have already left feedback for this visit. Thank you!',
+  err_booking_not_found: 'Booking not found.',
+  err_shop_not_found: 'Barbershop not found.',
+  err_slug_taken: 'This link is already taken.',
+  err_not_allowed: 'Not allowed.',
+  err_not_signed_in: 'Please sign in.',
+  err_unknown_error: 'Something went wrong. Please try again.',
+
+  clientsServed: 'clients served', reviewsCount: 'reviews', visitsDone: 'visits',
+  stepServices: 'Services', stepTime: 'Date & time', stepDetails: 'Your details',
+  chooseServices: 'Choose services', chooseServicesHint: 'You can pick more than one.',
+  chooseDate: 'Choose a day', chooseTime: 'Choose a time', noSlots: 'No free time this day. Try another day.', dayOff: 'Day off',
+  yourDetails: 'Your details', name: 'Name', phone: 'Phone', note: 'Note for the barber', notePlaceholder: 'Optional — e.g. “short on the sides”',
+  total: 'Total', confirmBooking: 'Confirm booking', booking: 'Booking…', selected: 'selected',
+  shopNotFound: 'Barbershop not found', shopNotFoundHint: 'Check the link or ask your barber for a new one.',
+  reviewsTitle: 'What clients say', noReviewsYet: 'No reviews yet.', hours: 'Opening hours', call: 'Call', closed: 'Closed',
+  morning: 'Morning', afternoon: 'Afternoon', evening: 'Evening',
+
+  bookingConfirmed: 'You are booked!', bookingSaved: 'Save this page — you can cancel or leave feedback here.',
+  copyLink: 'Copy link', copied: 'Copied', cancelBooking: 'Cancel booking', cancelAsk: 'Cancel this visit?', yesCancel: 'Yes, cancel', keep: 'Keep it',
+  bookingCancelled: 'This booking was cancelled.', bookAgain: 'Book again', bookAnother: 'Book another visit',
+  leaveFeedback: 'How was your visit?', commentPlaceholder: 'Tell others about the cut, the service, the place…',
+  sendFeedback: 'Send feedback', sending: 'Sending…', thanksFeedback: 'Thank you for your feedback!', feedbackLater: 'After your visit you can rate it here.',
+  status_booked: 'Booked', status_done: 'Done', status_no_show: 'No-show', status_cancelled: 'Cancelled', status_blocked: 'Blocked',
+
+  barberLogin: 'Barber sign in', signIn: 'Sign in', signUp: 'Create account', email: 'Email', password: 'Password',
+  noAccount: 'New here? Create an account', haveAccount: 'Already have an account? Sign in', checkEmail: 'Check your email to confirm the account, then sign in.',
+  createShop: 'Create your barbershop', shopName: 'Barbershop name', shopSlug: 'Page link', createShopHint: 'Clients will book at this link.', createShopBtn: 'Create',
+  nav_calendar: 'Calendar', nav_services: 'Services', nav_clients: 'Clients', nav_feedback: 'Feedback', nav_settings: 'Settings',
+  signOut: 'Sign out', publicPage: 'Booking page', openPage: 'Open',
+
+  day: 'Day', week: 'Week', newBooking: 'New booking', blockTime: 'Block time', blocked: 'Blocked',
+  markDone: 'Done', markNoShow: 'No-show', cancelVisit: 'Cancel', restore: 'Restore',
+  noBookingsDay: 'No bookings this day.', startTime: 'Start', duration: 'Duration', client: 'Client', reason: 'Reason',
+  reasonPlaceholder: 'Lunch, personal, day off…', bookingsCount: 'bookings', freeLeft: 'free', addBooking: 'Add booking',
+  services: 'Services', noServicesPicked: 'Pick at least one service or set a duration.',
+
+  addService: 'Add service', serviceName: 'Name', description: 'Description', price: 'Price', active: 'Shown to clients',
+  hiddenFromClients: 'Hidden', archive: 'Remove', archiveAsk: 'Remove this service? Past bookings keep it.', noServices: 'No services yet. Add your first one.',
+  newService: 'New service', editService: 'Edit service',
+
+  clientsTotal: 'Clients served', repeatClients: 'Returning', visits: 'Visits', revenue: 'Revenue', noShowRate: 'No-show rate',
+  avgRating: 'Rating', topServices: 'Services', topClients: 'Clients', visitsPerMonth: 'Visits per month', lastVisit: 'Last visit',
+  times: 'times', upcoming: 'Upcoming', period_30: '30 days', period_90: '90 days', period_all: 'All time', searchClients: 'Search name or phone',
+
+  feedbackTitle: 'Feedback', hide: 'Hide', show: 'Show', hiddenTag: 'Hidden from page', noFeedback: 'No feedback yet. Clients can rate a visit from their booking link.',
+  allRatings: 'All',
+
+  settings: 'Barbershop', tagline: 'Short description', address: 'Address', shopPhone: 'Phone',
+  workingHours: 'Working hours', open: 'Open', closeAt: 'Close', dayOffShort: 'Off',
+  bookingRules: 'Booking rules', slotStep: 'Time step', leadTime: 'Earliest booking', bookingWindow: 'Book ahead', days: 'days', minAhead: 'min ahead',
+  saved: 'Saved', saveChanges: 'Save changes',
+
+  heroTitle: 'Bookings for barbers, without the phone calls', heroSub: 'Clients pick a service and a free time in seconds. You see your whole day in one calendar.',
+  tryDemo: 'Open demo booking page', barberArea: 'Barber dashboard',
+  feat1: 'Online booking', feat1d: 'A personal link for Instagram and Telegram. Only free times are shown — no double bookings.',
+  feat2: 'Calendar', feat2d: 'Day and week views, walk-ins, breaks, done and no-show in one tap.',
+  feat3: 'Clients & feedback', feat3d: 'How many clients you served, who returns, and what they say.',
+}
+
+const ru = {
+  min: 'мин', h: 'ч', sum: 'сум', back: 'Назад', next: 'Далее', save: 'Сохранить', cancel: 'Отмена', close: 'Закрыть', retry: 'Повторить',
+  edit: 'Изменить', add: 'Добавить', today: 'Сегодня', tomorrow: 'Завтра', or: 'или',
+  demoBanner: 'Демо-режим — данные хранятся только в этом браузере.', resetDemo: 'Сбросить демо', poweredBy: 'Запись через Navbat',
+  loadFailed: 'Не удалось загрузить. Проверьте связь и повторите.',
+
+  err_slot_taken: 'Это время только что заняли. Выберите другое.',
+  err_name_required: 'Введите имя.',
+  err_phone_required: 'Введите номер телефона.',
+  err_service_unavailable: 'Одна из услуг больше недоступна.',
+  err_date_out_of_range: 'На эту дату запись закрыта.',
+  err_time_passed: 'Это время уже прошло.',
+  err_outside_hours: 'Это время вне рабочих часов.',
+  err_cannot_cancel: 'Эту запись уже нельзя отменить.',
+  err_cannot_review: 'Для этого визита отзыв недоступен.',
+  err_too_early: 'Оставить отзыв можно после визита.',
+  err_already_reviewed: 'Вы уже оставили отзыв. Спасибо!',
+  err_booking_not_found: 'Запись не найдена.',
+  err_shop_not_found: 'Барбершоп не найден.',
+  err_slug_taken: 'Эта ссылка уже занята.',
+  err_not_allowed: 'Нет доступа.',
+  err_not_signed_in: 'Войдите в аккаунт.',
+  err_unknown_error: 'Что-то пошло не так. Попробуйте ещё раз.',
+
+  clientsServed: 'клиентов обслужено', reviewsCount: 'отзывов', visitsDone: 'визитов',
+  stepServices: 'Услуги', stepTime: 'Дата и время', stepDetails: 'Ваши данные',
+  chooseServices: 'Выберите услуги', chooseServicesHint: 'Можно выбрать несколько.',
+  chooseDate: 'Выберите день', chooseTime: 'Выберите время', noSlots: 'В этот день нет свободного времени. Выберите другой.', dayOff: 'Выходной',
+  yourDetails: 'Ваши данные', name: 'Имя', phone: 'Телефон', note: 'Комментарий для мастера', notePlaceholder: 'Необязательно — например, «покороче по бокам»',
+  total: 'Итого', confirmBooking: 'Записаться', booking: 'Записываем…', selected: 'выбрано',
+  shopNotFound: 'Барбершоп не найден', shopNotFoundHint: 'Проверьте ссылку или попросите мастера прислать новую.',
+  reviewsTitle: 'Отзывы клиентов', noReviewsYet: 'Пока нет отзывов.', hours: 'Часы работы', call: 'Позвонить', closed: 'Закрыто',
+  morning: 'Утро', afternoon: 'День', evening: 'Вечер',
+
+  bookingConfirmed: 'Вы записаны!', bookingSaved: 'Сохраните эту страницу — здесь можно отменить запись или оставить отзыв.',
+  copyLink: 'Скопировать ссылку', copied: 'Скопировано', cancelBooking: 'Отменить запись', cancelAsk: 'Отменить визит?', yesCancel: 'Да, отменить', keep: 'Оставить',
+  bookingCancelled: 'Запись отменена.', bookAgain: 'Записаться снова', bookAnother: 'Записаться ещё',
+  leaveFeedback: 'Как прошёл визит?', commentPlaceholder: 'Расскажите о стрижке, сервисе, месте…',
+  sendFeedback: 'Отправить отзыв', sending: 'Отправляем…', thanksFeedback: 'Спасибо за отзыв!', feedbackLater: 'После визита здесь можно будет оставить отзыв.',
+  status_booked: 'Записан', status_done: 'Выполнено', status_no_show: 'Не пришёл', status_cancelled: 'Отменено', status_blocked: 'Занято',
+
+  barberLogin: 'Вход для мастера', signIn: 'Войти', signUp: 'Создать аккаунт', email: 'Email', password: 'Пароль',
+  noAccount: 'Впервые здесь? Создайте аккаунт', haveAccount: 'Уже есть аккаунт? Войти', checkEmail: 'Подтвердите аккаунт по ссылке из письма, затем войдите.',
+  createShop: 'Создайте барбершоп', shopName: 'Название', shopSlug: 'Ссылка на страницу', createShopHint: 'По этой ссылке клиенты будут записываться.', createShopBtn: 'Создать',
+  nav_calendar: 'Календарь', nav_services: 'Услуги', nav_clients: 'Клиенты', nav_feedback: 'Отзывы', nav_settings: 'Настройки',
+  signOut: 'Выйти', publicPage: 'Страница записи', openPage: 'Открыть',
+
+  day: 'День', week: 'Неделя', newBooking: 'Новая запись', blockTime: 'Закрыть время', blocked: 'Занято',
+  markDone: 'Готово', markNoShow: 'Не пришёл', cancelVisit: 'Отменить', restore: 'Вернуть',
+  noBookingsDay: 'В этот день записей нет.', startTime: 'Начало', duration: 'Длительность', client: 'Клиент', reason: 'Причина',
+  reasonPlaceholder: 'Обед, личное, выходной…', bookingsCount: 'записей', freeLeft: 'свободно', addBooking: 'Добавить запись',
+  services: 'Услуги', noServicesPicked: 'Выберите услугу или укажите длительность.',
+
+  addService: 'Добавить услугу', serviceName: 'Название', description: 'Описание', price: 'Цена', active: 'Видна клиентам',
+  hiddenFromClients: 'Скрыта', archive: 'Удалить', archiveAsk: 'Удалить услугу? Прошлые записи её сохранят.', noServices: 'Услуг пока нет. Добавьте первую.',
+  newService: 'Новая услуга', editService: 'Изменить услугу',
+
+  clientsTotal: 'Клиентов обслужено', repeatClients: 'Вернулись', visits: 'Визиты', revenue: 'Выручка', noShowRate: 'Неявки',
+  avgRating: 'Рейтинг', topServices: 'Услуги', topClients: 'Клиенты', visitsPerMonth: 'Визиты по месяцам', lastVisit: 'Последний визит',
+  times: 'раз', upcoming: 'Предстоящие', period_30: '30 дней', period_90: '90 дней', period_all: 'Всё время', searchClients: 'Имя или телефон',
+
+  feedbackTitle: 'Отзывы', hide: 'Скрыть', show: 'Показать', hiddenTag: 'Скрыт со страницы', noFeedback: 'Отзывов пока нет. Клиент может оценить визит по ссылке на запись.',
+  allRatings: 'Все',
+
+  settings: 'Барбершоп', tagline: 'Краткое описание', address: 'Адрес', shopPhone: 'Телефон',
+  workingHours: 'Часы работы', open: 'Открытие', closeAt: 'Закрытие', dayOffShort: 'Вых.',
+  bookingRules: 'Правила записи', slotStep: 'Шаг времени', leadTime: 'Самая ранняя запись', bookingWindow: 'Запись вперёд', days: 'дней', minAhead: 'мин заранее',
+  saved: 'Сохранено', saveChanges: 'Сохранить',
+
+  heroTitle: 'Запись к барберу без звонков', heroSub: 'Клиент за секунды выбирает услугу и свободное время. Вы видите весь день в одном календаре.',
+  tryDemo: 'Открыть демо-страницу записи', barberArea: 'Кабинет мастера',
+  feat1: 'Онлайн-запись', feat1d: 'Личная ссылка для Instagram и Telegram. Показывается только свободное время — без двойных записей.',
+  feat2: 'Календарь', feat2d: 'День и неделя, клиенты без записи, перерывы, «готово» и «не пришёл» в одно касание.',
+  feat3: 'Клиенты и отзывы', feat3d: 'Сколько клиентов обслужено, кто возвращается и что о вас пишут.',
+}
+
+const uz = {
+  min: 'daq', h: 'soat', sum: "so'm", back: 'Orqaga', next: 'Keyingi', save: 'Saqlash', cancel: 'Bekor qilish', close: 'Yopish', retry: 'Qayta urinish',
+  edit: 'Tahrirlash', add: "Qo'shish", today: 'Bugun', tomorrow: 'Ertaga', or: 'yoki',
+  demoBanner: "Demo rejim — ma'lumotlar faqat shu brauzerda saqlanadi.", resetDemo: 'Demoni tiklash', poweredBy: 'Navbat orqali yozilish',
+  loadFailed: "Yuklab bo'lmadi. Internetni tekshirib, qayta urining.",
+
+  err_slot_taken: 'Bu vaqt hozirgina band qilindi. Boshqasini tanlang.',
+  err_name_required: 'Ismingizni kiriting.',
+  err_phone_required: 'Telefon raqamini kiriting.',
+  err_service_unavailable: 'Xizmatlardan biri endi mavjud emas.',
+  err_date_out_of_range: 'Bu sanaga yozilish yopiq.',
+  err_time_passed: "Bu vaqt allaqachon o'tib ketgan.",
+  err_outside_hours: 'Bu vaqt ish soatlaridan tashqarida.',
+  err_cannot_cancel: "Bu yozuvni endi bekor qilib bo'lmaydi.",
+  err_cannot_review: 'Bu tashrif uchun fikr qoldirib bo‘lmaydi.',
+  err_too_early: 'Fikrni tashrifdan keyin qoldirishingiz mumkin.',
+  err_already_reviewed: 'Siz allaqachon fikr qoldirgansiz. Rahmat!',
+  err_booking_not_found: 'Yozuv topilmadi.',
+  err_shop_not_found: 'Sartaroshxona topilmadi.',
+  err_slug_taken: 'Bu havola band.',
+  err_not_allowed: "Ruxsat yo'q.",
+  err_not_signed_in: 'Iltimos, kiring.',
+  err_unknown_error: "Nimadir xato ketdi. Qayta urinib ko'ring.",
+
+  clientsServed: 'mijozga xizmat qilingan', reviewsCount: 'fikr', visitsDone: 'tashrif',
+  stepServices: 'Xizmatlar', stepTime: 'Sana va vaqt', stepDetails: "Ma'lumotlaringiz",
+  chooseServices: 'Xizmatlarni tanlang', chooseServicesHint: 'Bir nechtasini tanlash mumkin.',
+  chooseDate: 'Kunni tanlang', chooseTime: 'Vaqtni tanlang', noSlots: "Bu kunda bo'sh vaqt yo'q. Boshqa kunni tanlang.", dayOff: 'Dam olish kuni',
+  yourDetails: "Ma'lumotlaringiz", name: 'Ism', phone: 'Telefon', note: 'Usta uchun izoh', notePlaceholder: 'Ixtiyoriy — masalan, «yon tomonlari qisqaroq»',
+  total: 'Jami', confirmBooking: 'Yozilish', booking: 'Yozilmoqda…', selected: 'tanlandi',
+  shopNotFound: 'Sartaroshxona topilmadi', shopNotFoundHint: "Havolani tekshiring yoki ustadan yangisini so'rang.",
+  reviewsTitle: 'Mijozlar fikri', noReviewsYet: "Hozircha fikrlar yo'q.", hours: 'Ish vaqti', call: "Qo'ng'iroq", closed: 'Yopiq',
+  morning: 'Ertalab', afternoon: 'Kunduzi', evening: 'Kechqurun',
+
+  bookingConfirmed: 'Siz yozildingiz!', bookingSaved: 'Bu sahifani saqlang — bu yerda yozuvni bekor qilish yoki fikr qoldirish mumkin.',
+  copyLink: 'Havolani nusxalash', copied: 'Nusxalandi', cancelBooking: 'Yozuvni bekor qilish', cancelAsk: 'Tashrifni bekor qilasizmi?', yesCancel: 'Ha, bekor qilish', keep: 'Qoldirish',
+  bookingCancelled: 'Yozuv bekor qilindi.', bookAgain: 'Qayta yozilish', bookAnother: 'Yana yozilish',
+  leaveFeedback: "Tashrif qanday o'tdi?", commentPlaceholder: 'Soch turmagi, xizmat, joy haqida yozing…',
+  sendFeedback: 'Fikr yuborish', sending: 'Yuborilmoqda…', thanksFeedback: 'Fikringiz uchun rahmat!', feedbackLater: 'Tashrifdan keyin bu yerda baho qoldirishingiz mumkin.',
+  status_booked: 'Yozilgan', status_done: 'Bajarildi', status_no_show: 'Kelmadi', status_cancelled: 'Bekor qilindi', status_blocked: 'Band',
+
+  barberLogin: 'Usta uchun kirish', signIn: 'Kirish', signUp: "Ro'yxatdan o'tish", email: 'Email', password: 'Parol',
+  noAccount: "Yangimisiz? Ro'yxatdan o'ting", haveAccount: 'Akkauntingiz bormi? Kiring', checkEmail: 'Xatdagi havola orqali akkauntni tasdiqlang, keyin kiring.',
+  createShop: 'Sartaroshxonangizni yarating', shopName: 'Nomi', shopSlug: 'Sahifa havolasi', createShopHint: 'Mijozlar shu havola orqali yoziladi.', createShopBtn: 'Yaratish',
+  nav_calendar: 'Kalendar', nav_services: 'Xizmatlar', nav_clients: 'Mijozlar', nav_feedback: 'Fikrlar', nav_settings: 'Sozlamalar',
+  signOut: 'Chiqish', publicPage: 'Yozilish sahifasi', openPage: 'Ochish',
+
+  day: 'Kun', week: 'Hafta', newBooking: 'Yangi yozuv', blockTime: 'Vaqtni yopish', blocked: 'Band',
+  markDone: 'Bajarildi', markNoShow: 'Kelmadi', cancelVisit: 'Bekor', restore: 'Qaytarish',
+  noBookingsDay: "Bu kunda yozuvlar yo'q.", startTime: 'Boshlanish', duration: 'Davomiyligi', client: 'Mijoz', reason: 'Sabab',
+  reasonPlaceholder: 'Tushlik, shaxsiy, dam olish…', bookingsCount: 'yozuv', freeLeft: "bo'sh", addBooking: "Yozuv qo'shish",
+  services: 'Xizmatlar', noServicesPicked: 'Xizmat tanlang yoki davomiylikni kiriting.',
+
+  addService: "Xizmat qo'shish", serviceName: 'Nomi', description: 'Tavsif', price: 'Narx', active: "Mijozlarga ko'rinadi",
+  hiddenFromClients: 'Yashirin', archive: "O'chirish", archiveAsk: "Xizmatni o'chirasizmi? Oldingi yozuvlarda saqlanadi.", noServices: "Hozircha xizmatlar yo'q. Birinchisini qo'shing.",
+  newService: 'Yangi xizmat', editService: 'Xizmatni tahrirlash',
+
+  clientsTotal: 'Xizmat qilingan mijozlar', repeatClients: 'Qaytganlar', visits: 'Tashriflar', revenue: 'Tushum', noShowRate: 'Kelmaganlar',
+  avgRating: 'Reyting', topServices: 'Xizmatlar', topClients: 'Mijozlar', visitsPerMonth: 'Oylik tashriflar', lastVisit: 'Oxirgi tashrif',
+  times: 'marta', upcoming: 'Kelgusi', period_30: '30 kun', period_90: '90 kun', period_all: 'Hammasi', searchClients: 'Ism yoki telefon',
+
+  feedbackTitle: 'Fikrlar', hide: 'Yashirish', show: "Ko'rsatish", hiddenTag: 'Sahifada yashirin', noFeedback: "Hozircha fikrlar yo'q. Mijoz yozuv havolasi orqali baho qoldiradi.",
+  allRatings: 'Hammasi',
+
+  settings: 'Sartaroshxona', tagline: 'Qisqa tavsif', address: 'Manzil', shopPhone: 'Telefon',
+  workingHours: 'Ish vaqti', open: 'Ochilish', closeAt: 'Yopilish', dayOffShort: 'Dam',
+  bookingRules: 'Yozilish qoidalari', slotStep: 'Vaqt qadami', leadTime: 'Eng erta yozilish', bookingWindow: 'Oldindan yozilish', days: 'kun', minAhead: 'daq oldin',
+  saved: 'Saqlandi', saveChanges: 'Saqlash',
+
+  heroTitle: "Sartaroshlar uchun qo'ng'iroqsiz yozilish", heroSub: "Mijoz bir necha soniyada xizmat va bo'sh vaqtni tanlaydi. Siz butun kunni bitta kalendarda ko'rasiz.",
+  tryDemo: 'Demo yozilish sahifasi', barberArea: 'Usta kabineti',
+  feat1: 'Onlayn yozilish', feat1d: "Instagram va Telegram uchun shaxsiy havola. Faqat bo'sh vaqtlar ko'rsatiladi — ikki marta band qilish yo'q.",
+  feat2: 'Kalendar', feat2d: "Kun va hafta ko'rinishi, yozilmasdan kelganlar, tanaffuslar, «bajarildi» va «kelmadi» bir bosishda.",
+  feat3: 'Mijozlar va fikrlar', feat3d: "Nechta mijozga xizmat qildingiz, kim qaytadi va nima deyishadi.",
+}
+
+const DICTS = { en, ru, uz }
+export const LANGS = [
+  { code: 'uz', label: "O'z" },
+  { code: 'ru', label: 'Ru' },
+  { code: 'en', label: 'En' },
+]
+const LOCALES = { en: 'en-GB', ru: 'ru-RU', uz: 'uz-Latn-UZ' }
+
+function initialLang() {
+  try {
+    const saved = localStorage.getItem('nb-lang')
+    if (saved && DICTS[saved]) return saved
+  } catch { /* ignore */ }
+  const nav = (navigator.language || 'en').slice(0, 2)
+  return DICTS[nav] ? nav : 'ru'
+}
+
+const I18nContext = createContext(null)
+
+export function I18nProvider({ children }) {
+  const [lang, setLangState] = useState(initialLang)
+  const setLang = useCallback((next) => {
+    setLangState(next)
+    document.documentElement.lang = next
+    try { localStorage.setItem('nb-lang', next) } catch { /* ignore */ }
+  }, [])
+  const value = useMemo(() => {
+    const dict = DICTS[lang]
+    const t = (key) => dict[key] ?? en[key] ?? key
+    const locale = LOCALES[lang]
+    return {
+      lang, setLang, t, locale,
+      errorText: (err) => t(`err_${err?.code || 'unknown_error'}`),
+      money: (value, currency = 'UZS') => `${Math.round(Number(value) || 0).toLocaleString('ru-RU')} ${currency === 'UZS' ? dict.sum : currency}`,
+      weekdayShort: (iso) => new Intl.DateTimeFormat(locale, { weekday: 'short', timeZone: 'UTC' }).format(new Date(iso + 'T00:00:00Z')),
+      dayLong: (iso) => new Intl.DateTimeFormat(locale, { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC' }).format(new Date(iso + 'T00:00:00Z')),
+      dayMonth: (iso) => new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'short', timeZone: 'UTC' }).format(new Date(iso + 'T00:00:00Z')),
+      monthShort: (ym) => new Intl.DateTimeFormat(locale, { month: 'short', timeZone: 'UTC' }).format(new Date(ym + '-01T00:00:00Z')),
+      weekdayName: (day) => new Intl.DateTimeFormat(locale, { weekday: 'long', timeZone: 'UTC' }).format(new Date(Date.UTC(2026, 9, 18 + day))),
+    }
+  }, [lang, setLang])
+  return <I18nContext.Provider value={value}>{children}</I18nContext.Provider>
+}
+
+export const useI18n = () => useContext(I18nContext)
