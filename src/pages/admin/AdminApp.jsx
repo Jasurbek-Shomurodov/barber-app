@@ -1,10 +1,9 @@
-import { useCallback, useEffect, useState } from 'react'
-import { Link, NavLink, Navigate, Route, Routes, useSearchParams } from 'react-router-dom'
-import { ArrowLeft, CalendarDays, ExternalLink, LogOut, MessageSquareHeart, Scissors, Settings, Users } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { NavLink, Navigate, Route, Routes, useLocation } from 'react-router-dom'
+import { CalendarDays, ExternalLink, LogOut, MessageSquareHeart, Scissors, Settings, Users } from 'lucide-react'
 import { api } from '../../lib/api.js'
 import { useI18n } from '../../lib/i18n.jsx'
-import { ErrorNote, Field, LangSwitch, Logo, Shimmer, TelegramLoginButton, ThemeSwitch } from '../../components/ui.jsx'
-import { hasTelegram } from '../../lib/telegram.js'
+import { ErrorNote, Field, LangSwitch, Logo, Shimmer, ThemeSwitch } from '../../components/ui.jsx'
 import CalendarView from './CalendarView.jsx'
 import Services from './Services.jsx'
 import Clients from './Clients.jsx'
@@ -12,6 +11,7 @@ import Feedback from './Feedback.jsx'
 import ShopSettings from './ShopSettings.jsx'
 
 export default function AdminApp() {
+  const location = useLocation()
   const [session, setSession] = useState(undefined)
   const [shop, setShop] = useState(undefined)
   const [error, setError] = useState(null)
@@ -28,7 +28,8 @@ export default function AdminApp() {
   }, [session])
 
   if (error) return <Centered><ErrorNote error="loadFailed" onRetry={() => window.location.reload()} /></Centered>
-  if (session === null) return <Login onSession={setSession} />
+  // Signed out: the sign-in dialog lives on the landing page; come back here once signed in.
+  if (session === null) return <Navigate to="/?auth=in" replace state={{ from: location.pathname }} />
   if (session === undefined || shop === undefined) return <AdminShimmer />
   if (!shop) return <CreateShop onCreated={setShop} />
   return <Layout shop={shop} setShop={setShop} onSignOut={() => api.signOut().then(() => setSession(null))} />
@@ -44,73 +45,6 @@ function AdminShimmer() {
       <div className="hidden w-60 shrink-0 space-y-3 p-4 md:block">{[0, 1, 2, 3, 4].map((i) => <Shimmer key={i} className="h-10 w-full rounded-2xl" />)}</div>
       <div className="flex-1 space-y-4 p-4 md:p-8"><Shimmer className="h-10 w-64" /><Shimmer className="h-[60vh] w-full rounded-[28px]" /></div>
     </div>
-  )
-}
-
-function Login({ onSession }) {
-  const { t } = useI18n()
-  // Sign-in vs sign-up lives in the URL so the browser back button undoes the switch.
-  const [params, setParams] = useSearchParams()
-  const mode = params.get('mode') === 'signup' ? 'up' : 'in'
-  const setMode = (next) => {
-    if (next === mode) return
-    setError(null); setNotice('')
-    setParams(next === 'up' ? { mode: 'signup' } : {})
-  }
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [busy, setBusy] = useState(false)
-  const [error, setError] = useState(null)
-  const [notice, setNotice] = useState('')
-
-  const onTelegram = useCallback(async (user) => {
-    setBusy(true); setError(null)
-    try { onSession(await api.telegramSignIn(user)) } catch (err) { setError(err); setBusy(false) }
-  }, [onSession])
-
-  async function submit(e) {
-    e.preventDefault()
-    setBusy(true); setError(null); setNotice('')
-    try {
-      const s = mode === 'in' ? await api.signIn(email, password) : await api.signUp(email, password)
-      if (s) onSession(s)
-      else setNotice(t('checkEmail'))
-    } catch (err) {
-      setError(err)
-    } finally {
-      setBusy(false)
-    }
-  }
-
-  return (
-    <Centered>
-      <div className="mb-6 flex items-center justify-between gap-2">
-        <Link to="/" className="btn-ghost flex h-9 items-center gap-1.5 rounded-full pl-2.5 pr-3.5 text-[14px] font-medium"><ArrowLeft size={16} />{t('back')}</Link>
-        <div className="flex gap-2"><LangSwitch /><ThemeSwitch /></div>
-      </div>
-      <form onSubmit={submit} className="glass rise space-y-3 rounded-[28px] p-6">
-        <div className="flex items-center gap-2.5"><Logo size={30} /><span className="serif c-title text-[22px] font-semibold">Barber</span></div>
-        <div className="soft relative grid grid-cols-2 rounded-full p-1 text-[14px] font-semibold" role="tablist">
-          <span aria-hidden="true" className="auth-tab-pill absolute inset-y-1 left-1 w-[calc(50%-4px)] rounded-full" style={{ transform: mode === 'up' ? 'translateX(100%)' : 'none' }} />
-          {[['in', 'signIn'], ['up', 'signUp']].map(([code, label]) => (
-            <button key={code} type="button" role="tab" aria-selected={mode === code} onClick={() => setMode(code)} className={`relative z-10 rounded-full py-2 transition-colors duration-300 ${mode === code ? 'c-title' : 'c-muted'}`}>{t(label)}</button>
-          ))}
-        </div>
-        <h1 key={mode} className={`serif c-title text-[32px] font-semibold ${mode === 'up' ? 'swap-from-right' : 'swap-from-left'}`}>{mode === 'in' ? t('barberLogin') : t('signUp')}</h1>
-        {hasTelegram() && <>
-          <TelegramLoginButton onAuth={onTelegram} />
-          <div className="c-muted flex items-center gap-3 text-[12px]"><span className="b-line h-px flex-1 border-t" />{t('orEmail')}<span className="b-line h-px flex-1 border-t" /></div>
-        </>}
-        <Field label={t('email')}><input className="field" type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" required /></Field>
-        <Field label={t('password')}><input className="field" type="password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete={mode === 'in' ? 'current-password' : 'new-password'} minLength={6} required /></Field>
-        {error && <ErrorNote error={error} />}
-        {notice && <p className="pill-ok rounded-2xl px-4 py-3 text-[14px]">{notice}</p>}
-        <button type="submit" disabled={busy} className="btn-primary w-full rounded-full py-3 font-semibold"><span key={mode} className="swap-fade inline-block">{mode === 'in' ? t('signIn') : t('signUp')}</span></button>
-        <button type="button" onClick={() => setMode(mode === 'in' ? 'up' : 'in')} className="c-gold w-full text-center text-[14px] font-medium hover:underline">
-          <span key={mode} className="swap-fade inline-block">{mode === 'in' ? t('noAccount') : t('haveAccount')}</span>
-        </button>
-      </form>
-    </Centered>
   )
 }
 

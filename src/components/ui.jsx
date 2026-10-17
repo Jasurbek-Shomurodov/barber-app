@@ -27,17 +27,23 @@ export function Logo({ size = 34 }) {
   )
 }
 
-export function LangSwitch() {
+// Switchers sit on page chrome by default; `onPhoto` gives them dark glass for the landing hero photo,
+// where the theme's soft surfaces wash out.
+const switchTrack = (onPhoto) => (onPhoto ? 'switch-photo' : 'soft')
+const switchItem = (onPhoto, active) =>
+  onPhoto ? (active ? 'switch-photo-on' : 'switch-photo-off') : active ? 'bg-[var(--soft-strong)] c-title shadow-sm' : 'c-muted'
+
+export function LangSwitch({ onPhoto = false }) {
   const { lang, setLang } = useI18n()
   return (
-    <div className="soft flex rounded-full p-0.5 text-[13px] font-medium">
+    <div className={`${switchTrack(onPhoto)} flex rounded-full p-0.5 text-[13px] font-medium`}>
       {LANGS.map((l) => (
         <button
           key={l.code}
           type="button"
           onClick={() => setLang(l.code)}
           aria-pressed={lang === l.code}
-          className={`rounded-full px-2.5 py-1 transition ${lang === l.code ? 'bg-[var(--soft-strong)] c-title shadow-sm' : 'c-muted'}`}
+          className={`rounded-full px-2.5 py-1 transition ${switchItem(onPhoto, lang === l.code)}`}
         >
           {l.label}
         </button>
@@ -53,7 +59,7 @@ const THEMES = [
 ]
 
 // System by default; light/dark pin the theme and persist in localStorage (read in index.html).
-export function ThemeSwitch() {
+export function ThemeSwitch({ onPhoto = false }) {
   const { t } = useI18n()
   const [mode, setMode] = useState(() => document.documentElement.dataset.theme || 'system')
   const choose = (next) => {
@@ -67,7 +73,7 @@ export function ThemeSwitch() {
     setMode(next)
   }
   return (
-    <div className="soft flex rounded-full p-0.5" role="group" aria-label={t('theme')}>
+    <div className={`${switchTrack(onPhoto)} flex rounded-full p-0.5`} role="group" aria-label={t('theme')}>
       {THEMES.map(([code, Icon, label]) => (
         <button
           key={code}
@@ -76,7 +82,7 @@ export function ThemeSwitch() {
           aria-pressed={mode === code}
           aria-label={t(label)}
           title={t(label)}
-          className={`grid h-7 w-7 place-items-center rounded-full transition ${mode === code ? 'bg-[var(--soft-strong)] c-title shadow-sm' : 'c-muted'}`}
+          className={`grid h-7 w-7 place-items-center rounded-full transition ${switchItem(onPhoto, mode === code)}`}
         >
           <Icon size={14} />
         </button>

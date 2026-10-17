@@ -1,6 +1,7 @@
 // Supabase backend. Public callers only use the SECURITY DEFINER functions from
 // migrations/001_init.sql; the owner reads tables directly under RLS.
 import { createClient } from '@supabase/supabase-js'
+import { phoneLoginEmail } from './phoneLogin.js'
 
 const PAGE = 1000
 
@@ -11,6 +12,15 @@ function fail(error) {
   throw e
 }
 const unwrap = ({ data, error }) => (error ? fail(error) : data)
+const apiError = (code) => Object.assign(new Error(code), { code })
+
+/** POST to one of our api/auth routes; throws their error code. */
+async function postAuth(path, payload) {
+  const res = await fetch(path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
+  const body = await res.json().catch(() => ({}))
+  if (!res.ok) throw apiError(body.error || 'auth_failed')
+  return body
+}
 
 export function createSupabaseApi(url, key) {
   const sb = createClient(url, key)
@@ -63,8 +73,27 @@ export function createSupabaseApi(url, key) {
       const { data } = sb.auth.onAuthStateChange((_e, session) => cb(session))
       return () => data.subscription.unsubscribe()
     },
-    async signIn(email, password) { return unwrap(await sb.auth.signInWithPassword({ email, password })).session },
-    async signUp(email, password) { return unwrap(await sb.auth.signUp({ email, password })).session },
+    /** Phone + password: the phone maps to its internal auth address (src/lib/phoneLogin.js). */
+    async signInWithPhone(phone, password) {
+      const email = phoneLoginEmail(phone)
+      if (!email) throw apiError('phone_invalid')
+      const { data, error } = await sb.auth.signInWithPassword({ email, password })
+      if (error) throw apiError(/invalid/i.test(error.message) ? 'invalid_login' : 'auth_failed')
+      return data.session
+    },
+    async signUpWithPhone(name, phone, password) {
+      await postAuth('/api/auth/phone-signup', { name, phone, password })
+      return this.signInWithPhone(phone, password)
+    },
+    /** Bot sign-in, step 1: register the code the deep link carries. */
+    async startTelegramBotLogin(code, secret) { await postAuth('/api/auth/telegram-bot', { action: 'start', code, secret }) },
+    /** Bot sign-in, step 2: null while waiting for the confirm button, then the session. */
+    async pollTelegramBotLogin(code, secret) {
+      const body = await postAuth('/api/auth/telegram-bot', { action: 'poll', code, secret })
+      if (body.status === 'cancelled') throw apiError('telegram_login_cancelled')
+      if (!body.token_hash) return null
+      return unwrap(await sb.auth.verifyOtp({ token_hash: body.token_hash, type: 'magiclink' })).session
+    },
     /** Telegram Login Widget payload → verified by api/auth/telegram.js → Supabase session. */
     async telegramSignIn(widgetUser) {
       const res = await fetch('/api/auth/telegram', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(widgetUser) })

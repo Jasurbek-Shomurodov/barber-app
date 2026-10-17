@@ -76,6 +76,25 @@ export async function callTelegram(method, payload, token = getBotToken()) {
 export const sendMessage = (chatId, text, extra = {}) =>
   callTelegram('sendMessage', { chat_id: chatId, text, parse_mode: 'HTML', disable_web_page_preview: true, ...extra })
 
+// Bot sign-in (api/auth/telegram-bot.js + webhook): the browser's code goes in the deep link,
+// its secret stays in the browser and only sha256(secret) is stored.
+export const BOT_LOGIN_TTL_MS = 10 * 60 * 1000
+export const isLoginCode = (code) => typeof code === 'string' && /^[A-Za-z0-9_-]{20,40}$/.test(code)
+export const isLoginSecret = (secret) => typeof secret === 'string' && /^[A-Za-z0-9_-]{32,64}$/.test(secret)
+export const hashLoginSecret = (secret) => crypto.createHash('sha256').update(String(secret)).digest('hex')
+
+/** What a login request means right now: 'pending' | 'confirmed' | 'expired' | 'used' | 'cancelled'. */
+export function loginRequestState(row, now = Date.now()) {
+  if (!row) return 'expired'
+  if (row.status === 'used' || row.status === 'cancelled') return row.status
+  // A confirmation gets its own window, so confirming in the last minute still signs in.
+  if (now - new Date(row.confirmed_at || row.created_at).getTime() > BOT_LOGIN_TTL_MS) return 'expired'
+  return row.status === 'confirmed' ? 'confirmed' : 'pending'
+}
+
+/** True when `secret` is the one registered for this request (constant time). */
+export const loginSecretMatches = (row, secret) => Boolean(row) && isLoginSecret(secret) && timingSafeEqualHex(row.secret_hash, hashLoginSecret(secret))
+
 /** The `/start <payload>` deep-link argument, or ''. */
 export function startPayload(text) {
   const m = /^\/start(?:@\w+)?(?:\s+(\S+))?/.exec(String(text || '').trim())

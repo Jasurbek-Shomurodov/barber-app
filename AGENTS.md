@@ -15,7 +15,8 @@ and Telegram login, notifications and reminders. One deployment serves many shop
 | Translations | `src/lib/i18n.jsx`: `uz`, `ru`, `en`; `t`, `tf`, money and date formatters |
 | Theme | `src/index.css` tokens (same cream/copper kit as zarkebab.uz), `src/components/ui.jsx` |
 | Database, RLS, RPCs, triggers | `migrations/*.sql` (append-only, numbered) |
-| Telegram | `api/_lib/telegram.js`, `api/auth/telegram.js` (login), `api/telegram/webhook.js` (deep links), `api/telegram/dispatch.js` (queue fallback), `src/lib/telegram.js` |
+| Barber sign-in | `src/components/AuthDialog.jsx`, a dialog on the landing page (`/?auth=in` or `up`; signed-out `/admin` redirects there): phone + password (`src/lib/phoneLogin.js`, `api/auth/phone-signup.js`) or the bot (`api/auth/telegram-bot.js`, `/start l_<code>` in the webhook). No email sign-in |
+| Telegram | `api/_lib/telegram.js`, `api/auth/telegram.js` (widget login, client page), `api/telegram/webhook.js` (deep links, login confirm buttons), `api/telegram/dispatch.js` (queue fallback), `src/lib/telegram.js` |
 | Tests | `tests/*.test.js` (`npm test`), `scripts/check-migrations.mjs` (`npm run sql:check`, PGlite) |
 
 ```bash
@@ -31,7 +32,7 @@ npm run build
 - **The database decides availability.** Duration and price come from `services` inside `create_booking`; the exclusion constraint plus the buffer check reject overlaps; working hours, closed dates, lead time, booking window, blocked clients and cancellation hours are enforced in SQL. The browser mirrors the rules in `slots.js` only to show free times.
 - **Booking history is a snapshot.** `service_names`, `total_price`, `duration_min` are copied at booking time; renaming or repricing a service never rewrites them. Services are archived, never deleted.
 - **Notifications are a queue, not a side effect in the UI.** Triggers on `bookings` enqueue `notifications`; `dispatch_notifications()` (pg_net + pg_cron) or `api/telegram/dispatch.js` sends them. Cancelling a booking cancels its pending reminders. New kinds get a template in `notification_text()` for `uz`, `ru`, `en`.
-- **Secrets live server-side.** `TELEGRAM_BOT_TOKEN`, `SUPABASE_SERVICE_ROLE_KEY` only in `api/` and Vault. Telegram login payloads are verified by HMAC (`verifyLoginWidget` or `verify_telegram_login` in SQL) before being trusted. `api/` handlers check their secret before touching the admin client.
+- **Secrets live server-side.** `TELEGRAM_BOT_TOKEN`, `SUPABASE_SERVICE_ROLE_KEY` only in `api/` and Vault. Telegram login payloads are verified by HMAC (`verifyLoginWidget` or `verify_telegram_login` in SQL) before being trusted. Bot sign-in hands a session only to the browser holding the request's secret (only its sha256 is stored), once, within `BOT_LOGIN_TTL_MS`; `telegram_login_requests` has RLS and no policies. `api/` handlers check their secret before touching the admin client.
 - **Times are (date, start_min) in the shop's timezone.** Never store or compare browser-local instants; use `nowInZone`, `booking_starts_at`.
 - **Language changes are presentation only.** No refetch, reload or form reset; error codes are translated at render time (`err_<code>`); every key exists in all three dictionaries (`tests/i18n.test.js`).
 - **Loading shows content-shaped shimmers**, never spinners or loading text; no `alert()`/`confirm()`; errors are visible and retryable (`ErrorNote`).

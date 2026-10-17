@@ -1,7 +1,8 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import crypto from 'node:crypto'
-import { verifyLoginWidget, verifyWebAppInitData, startPayload } from '../api/_lib/telegram.js'
+import { verifyLoginWidget, verifyWebAppInitData, startPayload, BOT_LOGIN_TTL_MS, hashLoginSecret, isLoginCode, loginRequestState, loginSecretMatches } from '../api/_lib/telegram.js'
+import { loginPhoneDigits, phoneLoginEmail } from '../src/lib/phoneLogin.js'
 
 const token = '123456:TEST_TOKEN'
 const now = 1_800_000_000_000
@@ -35,4 +36,32 @@ test('start payload parsing', () => {
   assert.equal(startPayload('/start@BarberBot s_1'), 's_1')
   assert.equal(startPayload('/start'), '')
   assert.equal(startPayload('hello'), null)
+})
+
+test('bot login: only the browser holding the secret collects, and only within the window', () => {
+  const secret = 'S'.repeat(43)
+  const created = new Date(now - 60_000).toISOString()
+  const row = { code: 'c'.repeat(24), secret_hash: hashLoginSecret(secret), status: 'pending', created_at: created }
+  assert.ok(isLoginCode(row.code))
+  assert.ok(!isLoginCode('short'), 'codes are long and random')
+  assert.ok(!isLoginCode('a'.repeat(24) + ' x'), 'codes are deep-link safe')
+  assert.ok(loginSecretMatches(row, secret))
+  assert.ok(!loginSecretMatches(row, 'T'.repeat(43)))
+  assert.equal(loginRequestState(row, now), 'pending')
+  assert.equal(loginRequestState({ ...row, status: 'confirmed', confirmed_at: created }, now), 'confirmed')
+  assert.equal(loginRequestState(row, now + BOT_LOGIN_TTL_MS), 'expired')
+  // Confirming late in the window still gives the browser time to collect.
+  const lateConfirm = new Date(now + BOT_LOGIN_TTL_MS - 1000).toISOString()
+  assert.equal(loginRequestState({ ...row, status: 'confirmed', confirmed_at: lateConfirm }, now + BOT_LOGIN_TTL_MS + 5000), 'confirmed')
+  assert.equal(loginRequestState({ ...row, status: 'used' }, now), 'used')
+  assert.equal(loginRequestState(null, now), 'expired')
+})
+
+test('phone login maps every way of typing a number to one account', () => {
+  const email = phoneLoginEmail('+998 90 123 45 67')
+  assert.equal(email, 'p998901234567@phone.barber.local')
+  assert.equal(phoneLoginEmail('90 123-45-67'), email)
+  assert.equal(phoneLoginEmail('998901234567'), email)
+  assert.equal(loginPhoneDigits('12345'), '')
+  assert.equal(phoneLoginEmail(''), '')
 })

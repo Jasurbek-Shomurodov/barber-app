@@ -1,6 +1,8 @@
-import { Link } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { ArrowRight, CalendarDays, Link2, MessageSquareHeart } from 'lucide-react'
 import { useI18n } from '../lib/i18n.jsx'
+import { api } from '../lib/api.js'
+import AuthDialog from '../components/AuthDialog.jsx'
 import { LangSwitch, Logo, ThemeSwitch } from '../components/ui.jsx'
 import hero640 from '../assets/hero-640.webp'
 import hero1080 from '../assets/hero-1080.webp'
@@ -13,6 +15,15 @@ const HERO_SRCSET = `${hero640} 640w, ${hero1080} 1080w, ${hero1600} 1600w, ${he
 
 export default function Landing() {
   const { t } = useI18n()
+  const navigate = useNavigate()
+  const [, setParams] = useSearchParams()
+  // Signed out: open the sign-in dialog over this page instead of leaving it.
+  const openAdmin = (to) => async (e) => {
+    e.preventDefault()
+    const session = await api.getSession().catch(() => null)
+    if (session) navigate(to)
+    else setParams({ auth: 'in' }, { state: { from: to } })
+  }
   const features = [
     [Link2, 'feat1', 'feat1d', '/admin/settings'],
     [CalendarDays, 'feat2', 'feat2d', '/admin'],
@@ -36,20 +47,20 @@ export default function Landing() {
         <div className="hero-fade absolute inset-x-0 bottom-0 -z-10 h-56" />
         <header className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4">
           <div className="flex items-center gap-2.5"><Logo size={32} /><span className="serif text-[24px] font-semibold text-[#FFF8EE]">Barber</span></div>
-          <div className="flex items-center gap-2"><LangSwitch /><ThemeSwitch /></div>
+          <div className="flex items-center gap-2"><LangSwitch onPhoto /><ThemeSwitch onPhoto /></div>
         </header>
         <div className="rise mx-auto max-w-6xl px-4 pb-44 pt-16 sm:pb-56 sm:pt-24">
           <h1 className="serif mx-auto max-w-3xl text-[44px] font-semibold leading-[1.02] text-[#FFF8EE] sm:text-[68px]">{t('heroTitle')}</h1>
           <p className="mx-auto mt-5 max-w-xl text-[17px] text-[#F1E4D2]">{t('heroSub')}</p>
           <div className="mt-8 flex flex-wrap justify-center gap-3">
-            <Link to="/admin" className="btn-primary rounded-full px-7 py-3.5 text-[16px] font-semibold">{t('barberArea')}</Link>
+            <Link to="/admin" onClick={openAdmin('/admin')} className="btn-primary rounded-full px-7 py-3.5 text-[16px] font-semibold">{t('barberArea')}</Link>
           </div>
         </div>
       </section>
       <main className="relative z-10 mx-auto -mt-32 max-w-6xl px-4 pb-16 sm:-mt-40">
         <section className="grid gap-4 md:grid-cols-3">
           {features.map(([Icon, title, desc, to]) => (
-            <Link key={title} to={to} className="glass hero-card group block rounded-[28px] p-6 transition hover:-translate-y-0.5">
+            <Link key={title} to={to} onClick={openAdmin(to)} className="glass hero-card group block rounded-[28px] p-6 transition hover:-translate-y-0.5">
               <span className="grid h-11 w-11 place-items-center rounded-2xl bg-gradient-to-br from-[#C08447] to-[#7C4F22] text-[#FFF8EE]"><Icon size={20} /></span>
               <h2 className="serif c-title mt-4 flex items-center justify-between gap-2 text-[26px] font-semibold">
                 {t(title)}
@@ -60,6 +71,7 @@ export default function Landing() {
           ))}
         </section>
       </main>
+      <AuthDialog />
     </div>
   )
 }

@@ -49,4 +49,14 @@ test('api routes authenticate before using service credentials', () => {
   assert.ok(dispatch.indexOf('CRON_SECRET') < dispatch.indexOf('supabaseAdmin()'))
   const auth = read('api/auth/telegram.js')
   assert.ok(auth.indexOf('verifyLoginWidget(') < auth.indexOf('supabaseAdmin()'))
+  const bot = read('api/auth/telegram-bot.js')
+  assert.ok(bot.indexOf('isLoginSecret(') < bot.indexOf('supabaseAdmin()'), 'bot login touches the admin client before validating its input')
+  assert.ok(/loginSecretMatches\(row, secret\)/.test(bot), 'bot login hands out sessions without checking the browser secret')
+  assert.ok(/\.eq\('status', 'confirmed'\)/.test(bot), 'a bot confirmation must be claimed once')
+})
+
+test('telegram login requests are service-role only', () => {
+  const sql = read('migrations/004_telegram_bot_login.sql')
+  assert.match(sql, /telegram_login_requests enable row level security/)
+  assert.ok(!/create policy[^;]*telegram_login_requests/i.test(sql), 'login requests must not be readable by clients')
 })

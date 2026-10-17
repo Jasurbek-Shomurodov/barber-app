@@ -6,6 +6,14 @@ export const hasTelegram = () => Boolean(BOT_USERNAME)
 
 export const bookingDeepLink = (token) => `https://t.me/${BOT_USERNAME}?start=b_${token}`
 export const shopDeepLink = (code) => `https://t.me/${BOT_USERNAME}?start=s_${code}`
+export const loginDeepLink = (code) => `https://t.me/${BOT_USERNAME}?start=l_${code}`
+
+const randomToken = (bytes) => {
+  const a = crypto.getRandomValues(new Uint8Array(bytes))
+  return btoa(String.fromCharCode(...a)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
+}
+/** A fresh bot sign-in: `code` goes in the deep link, `secret` stays in this tab (api/auth/telegram-bot.js). */
+export const newBotLogin = () => ({ code: randomToken(18), secret: randomToken(32) })
 
 /** Mini App context: the page runs inside Telegram and initData identifies the user. */
 export function webAppInitData() {
