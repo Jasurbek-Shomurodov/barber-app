@@ -6,6 +6,7 @@ import { useAsync } from '../../lib/useAsync.js'
 import { addDays, formatDuration, labelToMin, minToLabel, nowInZone, startOfWeek } from '../../lib/time.js'
 import { hoursFor, isBlocking, overlaps } from '../../lib/slots.js'
 import { ErrorNote, Field, Sheet, Shimmer, StatusPill } from '../../components/ui.jsx'
+import Waitlist from './Waitlist.jsx'
 import { PageTitle } from './AdminApp.jsx'
 
 const PX = 1.3 // pixels per minute
@@ -115,6 +116,8 @@ export default function CalendarView({ shop }) {
         </div>
       )}
 
+      {view === 'day' && <Waitlist shop={shop} date={anchor} />}
+
       {view === 'day' && rows && cancelled.length > 0 && (
         <div className="mt-4">
           <h3 className="c-muted mb-2 text-[13px] font-medium uppercase tracking-wide">{t('status_cancelled')} · {cancelled.length}</h3>
@@ -137,7 +140,7 @@ export default function CalendarView({ shop }) {
 
 function DayColumn({ date, shop, rows, minStart, maxEnd, now, compact, onOpen, onEmpty }) {
   const { t } = useI18n()
-  const hours = hoursFor(shop.hours, date)
+  const hours = { ...hoursFor(shop.hours, date), off: hoursFor(shop.hours, date).off || (shop.closed_dates || []).includes(date) }
   const items = (rows || []).filter((b) => b.date === date && isBlocking(b))
   const top = (m) => (m - minStart) * PX
   const clickEmpty = (e) => {
@@ -205,7 +208,7 @@ function BookingSheet({ booking: b, shop, onClose, onStatus }) {
   return (
     <Sheet open={!!b} onClose={onClose} title={blocked ? t('blocked') : b.client_name || '—'}>
       <div className="space-y-3">
-        <div className="flex items-center gap-2"><StatusPill status={b.status} />{b.source === 'barber' && !blocked && <span className="pill-muted rounded-full px-2.5 py-0.5 text-[12px]">walk-in</span>}</div>
+        <div className="flex items-center gap-2"><StatusPill status={b.status} />{b.source === 'barber' && !blocked && <span className="pill-muted rounded-full px-2.5 py-0.5 text-[12px]">{t('sourceBarber')}</span>}</div>
         <dl className="soft space-y-2 rounded-2xl p-4 text-[15px]">
           <div className="flex justify-between gap-3"><dt className="c-muted">{t('stepTime')}</dt><dd className="c-title text-right capitalize">{dayLong(b.date)}, {minToLabel(b.start_min)}–{minToLabel(b.start_min + b.duration_min)}</dd></div>
           {!blocked && <div className="flex justify-between gap-3"><dt className="c-muted">{t('services')}</dt><dd className="c-title text-right">{b.service_names.join(', ') || '—'}</dd></div>}

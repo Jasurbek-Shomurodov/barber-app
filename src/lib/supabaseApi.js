@@ -5,7 +5,7 @@ import { createClient } from '@supabase/supabase-js'
 const PAGE = 1000
 
 function fail(error) {
-  const known = /(slot_taken|name_required|phone_required|service_unavailable|date_out_of_range|time_passed|outside_hours|cannot_cancel|cannot_review|too_early|already_reviewed|booking_not_found|shop_not_found|not_signed_in)/.exec(error?.message || '')
+  const known = /(client_blocked|too_late_to_cancel|slot_taken|name_required|phone_required|service_unavailable|date_out_of_range|time_passed|outside_hours|cannot_cancel|cannot_review|too_early|already_reviewed|booking_not_found|shop_not_found|not_signed_in)/.exec(error?.message || '')
   const e = new Error(known ? known[1] : error?.message || 'unknown_error')
   e.code = known ? known[1] : error?.code === '23505' ? 'slug_taken' : error?.code === '23P01' ? 'slot_taken' : 'unknown_error'
   throw e
@@ -39,11 +39,17 @@ export function createSupabaseApi(url, key) {
       return unwrap(await q)
     },
     async getBusy(shopId, from, to) { return unwrap(await sb.rpc('get_busy', { p_shop: shopId, p_from: from, p_to: to })) },
-    async createBooking({ shopId, serviceIds, date, startMin, name, phone, note }) {
+    async createBooking({ shopId, serviceIds, date, startMin, name, phone, note, lang = 'ru', telegram = null }) {
       return unwrap(await sb.rpc('create_booking', {
         p_shop: shopId, p_service_ids: serviceIds, p_date: date, p_start_min: startMin, p_name: name, p_phone: phone, p_note: note || '',
+        p_lang: lang, p_telegram: telegram,
       }))
     },
+    async joinWaitlist({ shopId, date, name, phone, lang = 'ru' }) {
+      unwrap(await sb.rpc('join_waitlist', { p_shop: shopId, p_date: date, p_name: name, p_phone: phone, p_lang: lang }))
+    },
+    // Linking happens through the bot deep link; nothing to do here.
+    async linkBookingTelegram() {},
     async getBooking(token) { return unwrap(await sb.rpc('get_booking', { p_token: token })) },
     async cancelBooking(token) { unwrap(await sb.rpc('cancel_booking', { p_token: token })) },
     async submitReview(token, { rating, comment }) { unwrap(await sb.rpc('submit_review', { p_token: token, p_rating: rating, p_comment: comment || '' })) },
@@ -61,6 +67,14 @@ export function createSupabaseApi(url, key) {
     },
     async signIn(email, password) { return unwrap(await sb.auth.signInWithPassword({ email, password })).session },
     async signUp(email, password) { return unwrap(await sb.auth.signUp({ email, password })).session },
+    /** Telegram Login Widget payload → verified by api/auth/telegram.js → Supabase session. */
+    async telegramSignIn(widgetUser) {
+      const res = await fetch('/api/auth/telegram', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(widgetUser) })
+      const body = await res.json().catch(() => ({}))
+      if (!res.ok) { const e = new Error(body.error || 'auth_failed'); e.code = body.error || 'auth_failed'; throw e }
+      return unwrap(await sb.auth.verifyOtp({ token_hash: body.token_hash, type: 'magiclink' })).session
+    },
+    async linkShopTelegram(shopId) { return unwrap(await sb.from('shops').select('*').eq('id', shopId).single()) },
     async signOut() { await sb.auth.signOut() },
     async getMyShop() {
       const user = unwrap(await sb.auth.getUser()).user
@@ -84,6 +98,17 @@ export function createSupabaseApi(url, key) {
         total_price: services.reduce((a, s) => a + Number(s.price), 0),
         client_name: name, client_phone: phone, note, status: blocked ? 'blocked' : 'booked', source: 'barber',
       }))
+    },
+    async listWaitlist(shopId, from, to) {
+      let q = sb.from('waitlist').select('*').eq('shop_id', shopId).order('created_at').limit(PAGE)
+      if (from) q = q.gte('date', from)
+      if (to) q = q.lte('date', to)
+      return unwrap(await q)
+    },
+    async setWaitlistStatus(shopId, waitId, status) { unwrap(await sb.from('waitlist').update({ status }).eq('id', waitId).eq('shop_id', shopId)) },
+    async listClientNotes(shopId) { return unwrap(await sb.from('client_notes').select('*').eq('shop_id', shopId).limit(PAGE)) },
+    async saveClientNote(shopId, key, patch) {
+      unwrap(await sb.from('client_notes').upsert({ shop_id: shopId, client_key: key, ...patch, updated_at: new Date().toISOString() }))
     },
     async setReviewHidden(shopId, reviewId, hidden) { unwrap(await sb.from('reviews').update({ hidden }).eq('id', reviewId).eq('shop_id', shopId)) },
   }

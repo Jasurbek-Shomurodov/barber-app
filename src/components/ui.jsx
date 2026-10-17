@@ -1,6 +1,7 @@
-import { useEffect, useId, useState } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
 import { Moon, Star, Sun, X } from 'lucide-react'
 import { LANGS, useI18n } from '../lib/i18n.jsx'
+import { hasTelegram, mountLoginWidget } from '../lib/telegram.js'
 
 export function Shimmer({ className = '', style }) {
   return <div className={`shimmer ${className}`} style={style} aria-hidden="true" />
@@ -164,4 +165,12 @@ export function StatusPill({ status }) {
   const { t } = useI18n()
   const cls = { booked: 'pill-warn', done: 'pill-ok', no_show: 'pill-bad', cancelled: 'pill-muted', blocked: 'pill-muted' }[status] || 'pill-muted'
   return <span className={`${cls} inline-flex rounded-full px-2.5 py-0.5 text-[12px] font-semibold`}>{t(`status_${status}`)}</span>
+}
+
+/** Telegram Login Widget. Renders nothing when VITE_TELEGRAM_BOT is unset; `demoFallback` draws a plain button instead. */
+export function TelegramLoginButton({ onAuth, requestWrite = false, demoFallback = null }) {
+  const ref = useRef(null)
+  useEffect(() => mountLoginWidget(ref.current, { onAuth, requestWrite }), [onAuth, requestWrite])
+  if (!hasTelegram()) return demoFallback
+  return <div ref={ref} className="flex min-h-[40px] justify-center" />
 }

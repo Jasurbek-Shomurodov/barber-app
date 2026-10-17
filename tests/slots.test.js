@@ -43,3 +43,10 @@ test('canBook checks exact minute and duration sums services', () => {
   assert.ok(canBook({ date: MONDAY, hours, duration: 50, start: 610 }))
   assert.ok(!canBook({ date: MONDAY, hours, duration: 50, start: 680 }))
 })
+
+test('buffer keeps a gap around busy bookings and closed dates have no slots', () => {
+  const busy = [{ start_min: 660, duration_min: 30, status: 'booked' }]
+  const starts = availableStarts({ date: MONDAY, hours, duration: 30, step: 15, busy, bufferMin: 15 })
+  assert.deepEqual(starts.map(minToLabel), ['10:00', '10:15'])
+  assert.deepEqual(availableStarts({ date: MONDAY, hours, duration: 30, closedDates: [MONDAY] }), [])
+})

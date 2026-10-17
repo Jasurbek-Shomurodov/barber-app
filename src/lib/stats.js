@@ -13,8 +13,9 @@ export function summarize(bookings, reviews = []) {
   const clients = new Map()
   for (const b of done) {
     const key = clientKey(b)
-    const c = clients.get(key) || { key, name: b.client_name, phone: b.client_phone, visits: 0, spent: 0, last: '' }
+    const c = clients.get(key) || { key, name: b.client_name, phone: b.client_phone, visits: 0, spent: 0, last: '', telegram: false }
     c.visits += 1
+    if (b.client_chat_id) c.telegram = true
     c.spent += Number(b.total_price) || 0
     if (b.date >= c.last) { c.last = b.date; c.name = b.client_name || c.name }
     clients.set(key, c)
@@ -60,4 +61,26 @@ export function visitsByMonth(bookings, todayIso, months = 6) {
   const counts = Object.fromEntries(keys.map((k) => [k, 0]))
   for (const b of bookings) if (b.status === 'done' && b.date.slice(0, 7) in counts) counts[b.date.slice(0, 7)] += 1
   return keys.map((k) => ({ month: k, count: counts[k] }))
+}
+
+/** Finished visits by start hour (0..23), for the "busiest hours" chart. */
+export function busiestHours(bookings) {
+  const counts = Array.from({ length: 24 }, (_, hour) => ({ hour, count: 0 }))
+  for (const b of bookings) if (b.status === 'done') counts[Math.floor(b.start_min / 60) % 24].count += 1
+  const used = counts.filter((h) => h.count)
+  if (!used.length) return counts.slice(8, 22)
+  const lo = Math.max(0, Math.min(...used.map((h) => h.hour)) - 1)
+  const hi = Math.min(23, Math.max(...used.map((h) => h.hour)) + 1)
+  return counts.slice(lo, hi + 1)
+}
+
+/** RFC 4180 CSV; Excel-friendly with the BOM the caller prepends. */
+export function toCsv(rows) {
+  if (!rows.length) return ''
+  const cols = Object.keys(rows[0])
+  const cell = (v) => {
+    const s = v == null ? '' : String(v)
+    return /[",\n;]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s
+  }
+  return [cols.join(','), ...rows.map((r) => cols.map((c) => cell(r[c])).join(','))].join('\n')
 }

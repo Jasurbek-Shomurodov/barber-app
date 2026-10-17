@@ -1,42 +1,48 @@
-# Navbat — online booking for barbers
+# Barber — online booking for barbers
 
-Clients open the barber's link (`/your-shop`), pick services, a day and a free time, and
-book in seconds. The barber manages everything at `/admin`: calendar, services, clients
-and stats, feedback and settings. One deployment serves many barbers — each gets their
-own shop and link.
+Live: `https://barber.vercel.app`. Clients open the barber's link (`/your-shop`), pick
+services, a day and a free time, and book in seconds — with Telegram confirmations and
+reminders. The barber manages everything at `/admin`: calendar, services, clients and
+stats, feedback and settings. One deployment serves many barbers.
+
+## Features
+
+- Public booking page: services grouped by category with duration and price, free times
+  only (working hours, closed dates, buffer, lead time, booking window), waitlist for full
+  days, reviews and headline numbers (clients served, rating), Instagram / Telegram / map links.
+- Client page by secret link: details, free cancellation until the deadline, Telegram
+  reminders, "book the same again", feedback after the visit.
+- Dashboard: day/week calendar with walk-ins and blocked time, services, clients (visits,
+  revenue, no-show rate, busiest hours, private notes, blocking, CSV), feedback moderation,
+  settings with QR code and share link.
+- Telegram: barber sign-in with the Login Widget, bot deep links that connect the barber's
+  chat and the client's chat, queue-based notifications (new booking, cancellations,
+  reminders, review request, slot freed for the waitlist, morning summary).
+- Three languages (O'zbek, Русский, English), light and dark theme, phone-first.
 
 ## Run
 
 ```bash
 npm install
-npm run dev      # http://localhost:5180
+npm run dev        # http://localhost:5180
 npm test
+npm run sql:check  # applies migrations to an in-memory Postgres and exercises the RPCs
 ```
 
-Without Supabase keys the app runs in **demo mode**: a sample shop at `/demo`, data kept
-in the browser's localStorage, and `/admin` signs straight in.
+Without Supabase keys the app runs in **demo mode**: a sample shop at `/demo`, data in the
+browser's localStorage, `/admin` signs straight in, Telegram actions are simulated.
 
-## Connect Supabase
+## Deploy (Vercel + Supabase + Telegram)
 
-1. Create a Supabase project and run `migrations/001_init.sql` in the SQL editor.
-2. Copy `.env.example` to `.env` and fill `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`.
-3. Open `/admin`, create an account, then create the barbershop and its link.
+1. Supabase: create a project, run `migrations/001_init.sql` then `002_telegram_and_policies.sql`.
+   Store the bot token: `select vault.create_secret('<token>', 'telegram_bot_token');`
+   (pg_cron then sends notifications every minute via pg_net).
+2. Telegram: create a bot with @BotFather, `/setdomain barber.vercel.app` for the Login
+   Widget, and register the webhook:
+   `curl "https://api.telegram.org/bot$TOKEN/setWebhook?url=https://barber.vercel.app/api/telegram/webhook&secret_token=$SECRET"`.
+3. Vercel: import the repo, set the env vars from `.env.example`
+   (`VITE_*` for the browser; `SUPABASE_SERVICE_ROLE_KEY`, `TELEGRAM_BOT_TOKEN`,
+   `TELEGRAM_WEBHOOK_SECRET`, `CRON_SECRET` server-only). `vercel.json` rewrites the SPA
+   and runs a daily queue flush as a fallback.
 
-## How it fits together
-
-| Part | Where |
-| --- | --- |
-| Routes | `src/App.jsx` — `/`, `/:slug` (booking), `/b/:token` (client's booking + feedback), `/admin/*` |
-| Free-time and duration math | `src/lib/slots.js` (tested) |
-| Client and service stats | `src/lib/stats.js` (tested) |
-| Data layer | `src/lib/api.js` picks `supabaseApi.js` or `demoApi.js` (same functions) |
-| Database, RLS, RPCs | `migrations/001_init.sql` |
-| Translations (O'zbek, Русский, English) | `src/lib/i18n.jsx` |
-
-Rules the database enforces:
-
-- Clients never read the bookings table; they get busy times (no names or phones) via `get_busy` and their own booking via its secret token.
-- Duration and price are computed from the services table in `create_booking`, never trusted from the browser.
-- Two live bookings of a shop can never overlap (exclusion constraint) — a race returns `slot_taken`.
-- Feedback is allowed once per visit, only after it started.
-- Service names and prices are snapshotted on each booking; removing a service archives it.
+See `AGENTS.md` for the code map and invariants.

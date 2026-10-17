@@ -32,3 +32,12 @@ test('visits by month fills empty months', () => {
   const rows = visitsByMonth([b({ date: '2026-09-02' }), b({ date: '2026-10-02' }), b({ date: '2026-10-03' })], '2026-10-17', 3)
   assert.deepEqual(rows, [{ month: '2026-08', count: 0 }, { month: '2026-09', count: 1 }, { month: '2026-10', count: 2 }])
 })
+
+test('busiest hours window and CSV escaping', async () => {
+  const { busiestHours, toCsv } = await import('../src/lib/stats.js')
+  const rows = busiestHours([b({ start_min: 600 }), b({ start_min: 615 }), b({ start_min: 900 }), b({ start_min: 700, status: 'no_show' })])
+  assert.equal(rows[0].hour, 9)
+  assert.equal(rows.at(-1).hour, 16)
+  assert.equal(rows.find((h) => h.hour === 10).count, 2)
+  assert.equal(toCsv([{ name: 'A "B", C', phone: '1' }]), 'name,phone\n"A ""B"", C",1')
+})

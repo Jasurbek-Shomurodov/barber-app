@@ -1,0 +1,10 @@
+{
+  "name": "Barber",
+  "short_name": "Barber",
+  "description": "Online booking for barbers",
+  "start_url": "/admin",
+  "display": "standalone",
+  "background_color": "#F6F0E7",
+  "theme_color": "#B07A3A",
+  "icons": [{ "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml" }]
+}

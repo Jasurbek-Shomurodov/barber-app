@@ -13,7 +13,7 @@ export default function Landing() {
   return (
     <div className="min-h-dvh">
       <header className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4">
-        <div className="flex items-center gap-2.5"><Logo size={32} /><span className="serif c-title text-[24px] font-semibold">Navbat</span></div>
+        <div className="flex items-center gap-2.5"><Logo size={32} /><span className="serif c-title text-[24px] font-semibold">Barber</span></div>
         <div className="flex items-center gap-2"><LangSwitch /><ThemeToggle /></div>
       </header>
       <main className="mx-auto max-w-6xl px-4 pb-16">

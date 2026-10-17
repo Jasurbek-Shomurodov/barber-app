@@ -17,7 +17,7 @@ export default function Services({ shop }) {
   return (
     <div className="max-w-3xl">
       <PageTitle title={t('nav_services')}>
-        <button type="button" onClick={() => setEditing({ shop_id: shop.id, name: '', description: '', duration_min: 30, price: 0, active: true })}
+        <button type="button" onClick={() => setEditing({ shop_id: shop.id, name: '', description: '', category: '', duration_min: 30, price: 0, active: true })}
           className="btn-primary flex items-center gap-1.5 rounded-full px-4 py-2 text-[14px] font-semibold"><Plus size={16} />{t('addService')}</button>
       </PageTitle>
       {q.error ? <ErrorNote error="loadFailed" onRetry={q.reload} />
@@ -29,7 +29,7 @@ export default function Services({ shop }) {
                   <li key={s.id}>
                     <button type="button" onClick={() => setEditing(s)} className={`glass flex w-full items-center gap-4 rounded-[22px] p-4 text-left transition hover:-translate-y-0.5 ${s.active ? '' : 'opacity-60'}`}>
                       <div className="min-w-0 flex-1">
-                        <div className="c-title flex items-center gap-2 text-[16px] font-semibold">{s.name}{!s.active && <span className="pill-muted inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px]"><EyeOff size={11} />{t('hiddenFromClients')}</span>}</div>
+                        <div className="c-title flex items-center gap-2 text-[16px] font-semibold">{s.name}{s.category && <span className="pill-muted rounded-full px-2 py-0.5 text-[11px] font-medium">{s.category}</span>}{!s.active && <span className="pill-muted inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px]"><EyeOff size={11} />{t('hiddenFromClients')}</span>}</div>
                         {s.description && <div className="c-muted truncate text-[13px]">{s.description}</div>}
                       </div>
                       <div className="c-body flex shrink-0 items-center gap-1 text-[14px]"><Clock size={14} className="c-gold" />{formatDuration(s.duration_min, t)}</div>
@@ -58,8 +58,8 @@ function ServiceSheet({ service, onClose, onSaved }) {
   }
   const save = (e) => {
     e.preventDefault()
-    const { id, shop_id, name, description, active } = form
-    run(() => api.saveService({ id, shop_id, name: name.trim(), description: description.trim(), active, duration_min: Number(form.duration_min), price: Number(form.price) || 0 }))
+    const { id, shop_id, name, description, active, category = '' } = form
+    run(() => api.saveService({ id, shop_id, name: name.trim(), description: description.trim(), category: category.trim(), active, duration_min: Number(form.duration_min), price: Number(form.price) || 0 }))
   }
 
   return (
@@ -67,6 +67,7 @@ function ServiceSheet({ service, onClose, onSaved }) {
       <form onSubmit={save} className="space-y-3">
         <Field label={t('serviceName')}><input className="field" value={form.name} onChange={set('name')} required autoFocus /></Field>
         <Field label={t('description')}><textarea className="field" rows={2} value={form.description} onChange={set('description')} /></Field>
+        <Field label={t('category')} hint={t('categoryHint')}><input className="field" value={form.category || ''} onChange={set('category')} list="svc-categories" /></Field>
         <div>
           <span className="c-muted mb-1.5 block text-[13px] font-medium">{t('duration')}</span>
           <div className="flex flex-wrap gap-1.5">

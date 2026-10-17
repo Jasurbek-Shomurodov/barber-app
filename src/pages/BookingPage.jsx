@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router-dom'
-import { CalendarCheck, Check, Copy, Scissors } from 'lucide-react'
-import { api } from '../lib/api.js'
+import { CalendarCheck, Check, Copy, RotateCcw, Scissors, Send } from 'lucide-react'
+import { api, isDemo } from '../lib/api.js'
+import { bookingDeepLink, hasTelegram } from '../lib/telegram.js'
 import { useI18n } from '../lib/i18n.jsx'
 import { useAsync } from '../lib/useAsync.js'
 import { formatDuration, minToLabel, nowInZone } from '../lib/time.js'
@@ -10,7 +11,7 @@ import { ErrorNote, LangSwitch, Shimmer, Stars, StatusPill, ThemeToggle } from '
 export default function BookingPage() {
   const { token } = useParams()
   const [params] = useSearchParams()
-  const { t, money, dayLong } = useI18n()
+  const { t, money, dayLong, dateTime } = useI18n()
   const q = useAsync(() => api.getBooking(token), [token])
   const b = q.data
   const isNew = params.get('new') === '1'
@@ -19,6 +20,14 @@ export default function BookingPage() {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState(null)
   const [copied, setCopied] = useState(false)
+  const canCancel = b?.status === 'booked' && (!b.cancel_until || new Date(b.cancel_until).getTime() > Date.now())
+  const rebookTo = b ? `/${b.shop_slug}?services=${(b.service_ids || []).join(',')}` : '/'
+
+  async function linkTelegram() {
+    if (isDemo) { await api.linkBookingTelegram(token); q.setData({ ...b, telegram_linked: true }); return }
+    window.open(bookingDeepLink(token), '_blank', 'noopener')
+    setTimeout(() => q.reload(), 8000)
+  }
 
   async function cancel() {
     setBusy(true)
@@ -86,15 +95,18 @@ export default function BookingPage() {
                   </dl>
 
                   {b.status === 'cancelled' && <p className="c-muted mt-4 text-[14px]">{t('bookingCancelled')}</p>}
+                  {b.status === 'booked' && b.cancel_until && (
+                    <p className="c-muted mt-3 text-[13px]">{canCancel ? `${t('cancelUntil')} ${dateTime(b.cancel_until)}` : t('cancelClosed')}</p>
+                  )}
 
                   <div className="mt-5 flex flex-wrap gap-2">
                     <button type="button" onClick={copy} className="btn-ghost flex items-center gap-2 rounded-full px-4 py-2.5 text-[14px] font-medium">
                       {copied ? <Check size={15} /> : <Copy size={15} />}{copied ? t('copied') : t('copyLink')}
                     </button>
-                    {b.status === 'cancelled' && (
-                      <Link to={`/${b.shop_slug}`} className="btn-primary rounded-full px-5 py-2.5 text-[14px] font-semibold">{t('bookAgain')}</Link>
+                    {(b.status === 'cancelled' || b.status === 'done') && (
+                      <Link to={rebookTo} className="btn-primary flex items-center gap-2 rounded-full px-5 py-2.5 text-[14px] font-semibold"><RotateCcw size={15} />{b.status === 'done' ? t('rebook') : t('bookAgain')}</Link>
                     )}
-                    {b.status === 'booked' && !asking && (
+                    {canCancel && !asking && (
                       <button type="button" onClick={() => setAsking(true)} className="btn-ghost btn-danger rounded-full px-4 py-2.5 text-[14px] font-medium">{t('cancelBooking')}</button>
                     )}
                   </div>
@@ -110,6 +122,21 @@ export default function BookingPage() {
                   {error && <div className="mt-3"><ErrorNote error={error} /></div>}
                 </section>
 
+                {b.status === 'booked' && (hasTelegram() || isDemo) && (
+                  <section className="glass rounded-[28px] p-5">
+                    {b.telegram_linked ? (
+                      <p className="c-ok flex items-center gap-2 text-[15px] font-medium"><Check size={18} />{t('tgLinked')}</p>
+                    ) : (
+                      <div className="flex flex-wrap items-center justify-between gap-3">
+                        <div>
+                          <p className="c-title text-[16px] font-semibold">{t('tgReminders')}</p>
+                          <p className="c-muted text-[13px]">{t('tgRemindersHint')}</p>
+                        </div>
+                        <button type="button" onClick={linkTelegram} className="btn-primary flex items-center gap-2 rounded-full px-5 py-2.5 text-[14px] font-semibold"><Send size={15} />{t('tgOpenBot')}</button>
+                      </div>
+                    )}
+                  </section>
+                )}
                 {b.status !== 'cancelled' && b.status !== 'no_show' && <Feedback booking={b} token={token} onDone={() => q.setData({ ...b, reviewed: true })} />}
               </>
             )}

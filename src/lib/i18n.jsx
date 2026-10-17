@@ -4,9 +4,26 @@ import { createContext, useCallback, useContext, useMemo, useState } from 'react
 // error codes are translated at render time with t(`err_${code}`).
 
 const en = {
+  err_client_blocked: 'Online booking is not available for this number. Please call the barbershop.',
+  err_too_late_to_cancel: 'It is too late to cancel online. Please call the barbershop.',
+  err_telegram_signature_invalid: 'Telegram sign-in could not be verified.', err_telegram_login_expired: 'Telegram sign-in expired. Try again.', err_auth_failed: 'Sign-in failed. Try again.',
+  loginWithTelegram: 'Sign in with Telegram', orEmail: 'or with email', telegramNotConfigured: 'Telegram is not configured for this deployment.',
+  tgReminders: 'Get reminders in Telegram', tgRemindersHint: 'Confirmation, a reminder before the visit and any changes.', tgLinked: 'Telegram reminders are on', tgOpenBot: 'Open bot',
+  tgIdentify: 'Continue with Telegram', tgIdentified: 'Reminders will come to your Telegram',
+  cancelUntil: 'Free cancellation until', cancelClosed: 'Online cancellation is closed — call the barbershop', policyNote: 'Cancel for free up to {h} h before the visit',
+  waitlistTitle: 'No free time? Join the waitlist', waitlistHint: 'We will message you in Telegram if a time frees up on this day.', joinWaitlist: 'Join waitlist', waitlistJoined: 'You are on the waitlist for this day.',
+  waitlist: 'Waitlist', waitlistEmpty: 'Nobody is waiting for this day.', waitlist_waiting: 'Waiting', waitlist_notified: 'Notified', waitlist_booked: 'Booked', waitlist_cancelled: 'Removed',
+  rebook: 'Book the same again', links: 'Links', instagram: 'Instagram', telegramChannel: 'Telegram', mapsUrl: 'Map link (Yandex / Google)', openMap: 'Open map',
+  bufferTime: 'Break between visits', cancelHours: 'Free cancellation until', hoursBefore: 'h before', closedDates: 'Closed dates', closedDatesHint: 'Holidays and days off beyond the weekly schedule.', addDate: 'Add date',
+  telegramSection: 'Telegram notifications', tgConnect: 'Connect Telegram', tgConnected: 'Connected — new bookings arrive in Telegram', tgConnectHint: 'Open the bot once from your phone and it links this barbershop.',
+  notifyNewBooking: 'New online booking', dailySummary: 'Morning summary', summaryOff: 'Off', reminderHours: 'Client reminders', reminderHoursHint: 'Hours before the visit, e.g. 24 and 2.',
+  shareTitle: 'Your booking link', shareHint: 'Put it in your Instagram bio and Telegram channel, print the QR at the mirror.', downloadQr: 'Download QR', copyLinkBtn: 'Copy link',
+  clientCard: 'Client', clientNote: 'Private note', clientNoteHint: 'Only you see this — preferences, machine numbers, allergies.', blockClient: 'Block online booking', unblockClient: 'Allow online booking', blockedTag: 'Blocked', history: 'History', exportCsv: 'Export CSV',
+  category: 'Category', categoryHint: 'Optional — groups services on the booking page', busiestHours: 'Busiest hours',
+  pwaHint: 'Add to home screen for one-tap access.', sourceOnline: 'online', sourceBarber: 'walk-in',
   min: 'min', h: 'h', sum: 'UZS', back: 'Back', next: 'Next', save: 'Save', cancel: 'Cancel', close: 'Close', retry: 'Try again',
   edit: 'Edit', add: 'Add', today: 'Today', tomorrow: 'Tomorrow', or: 'or',
-  demoBanner: 'Demo mode — data is stored only in this browser.', resetDemo: 'Reset demo', poweredBy: 'Booking by Navbat',
+  demoBanner: 'Demo mode — data is stored only in this browser.', resetDemo: 'Reset demo', poweredBy: 'Booking by Barber',
   loadFailed: 'Could not load. Check the connection and try again.',
 
   err_slot_taken: 'This time was just taken. Please pick another one.',
@@ -80,9 +97,26 @@ const en = {
 }
 
 const ru = {
+  err_client_blocked: 'Онлайн-запись для этого номера недоступна. Позвоните в барбершоп.',
+  err_too_late_to_cancel: 'Отменить онлайн уже поздно. Позвоните в барбершоп.',
+  err_telegram_signature_invalid: 'Не удалось проверить вход через Telegram.', err_telegram_login_expired: 'Вход через Telegram устарел. Попробуйте снова.', err_auth_failed: 'Не удалось войти. Попробуйте снова.',
+  loginWithTelegram: 'Войти через Telegram', orEmail: 'или по email', telegramNotConfigured: 'Telegram не настроен для этого сайта.',
+  tgReminders: 'Получать напоминания в Telegram', tgRemindersHint: 'Подтверждение, напоминание перед визитом и любые изменения.', tgLinked: 'Напоминания в Telegram включены', tgOpenBot: 'Открыть бота',
+  tgIdentify: 'Продолжить через Telegram', tgIdentified: 'Напоминания придут в ваш Telegram',
+  cancelUntil: 'Бесплатная отмена до', cancelClosed: 'Онлайн-отмена закрыта — позвоните в барбершоп', policyNote: 'Отмена бесплатно не позднее чем за {h} ч до визита',
+  waitlistTitle: 'Нет свободного времени? Встаньте в лист ожидания', waitlistHint: 'Напишем в Telegram, если в этот день освободится время.', joinWaitlist: 'В лист ожидания', waitlistJoined: 'Вы в листе ожидания на этот день.',
+  waitlist: 'Лист ожидания', waitlistEmpty: 'На этот день никто не ждёт.', waitlist_waiting: 'Ждёт', waitlist_notified: 'Уведомлён', waitlist_booked: 'Записался', waitlist_cancelled: 'Убран',
+  rebook: 'Записаться на то же', links: 'Ссылки', instagram: 'Instagram', telegramChannel: 'Telegram', mapsUrl: 'Ссылка на карту (Яндекс / Google)', openMap: 'Открыть карту',
+  bufferTime: 'Перерыв между визитами', cancelHours: 'Бесплатная отмена до', hoursBefore: 'ч до визита', closedDates: 'Закрытые даты', closedDatesHint: 'Праздники и выходные сверх недельного графика.', addDate: 'Добавить дату',
+  telegramSection: 'Уведомления в Telegram', tgConnect: 'Подключить Telegram', tgConnected: 'Подключено — новые записи приходят в Telegram', tgConnectHint: 'Откройте бота один раз с телефона — он привяжет этот барбершоп.',
+  notifyNewBooking: 'Новая онлайн-запись', dailySummary: 'Утренняя сводка', summaryOff: 'Выкл.', reminderHours: 'Напоминания клиентам', reminderHoursHint: 'За сколько часов до визита, например 24 и 2.',
+  shareTitle: 'Ваша ссылка для записи', shareHint: 'Поставьте в шапку Instagram и Telegram-канал, распечатайте QR у зеркала.', downloadQr: 'Скачать QR', copyLinkBtn: 'Скопировать ссылку',
+  clientCard: 'Клиент', clientNote: 'Личная заметка', clientNoteHint: 'Видите только вы — предпочтения, номера насадок, аллергии.', blockClient: 'Запретить онлайн-запись', unblockClient: 'Разрешить онлайн-запись', blockedTag: 'Заблокирован', history: 'История', exportCsv: 'Экспорт CSV',
+  category: 'Категория', categoryHint: 'Необязательно — группирует услуги на странице записи', busiestHours: 'Загруженные часы',
+  pwaHint: 'Добавьте на главный экран для быстрого доступа.', sourceOnline: 'онлайн', sourceBarber: 'без записи',
   min: 'мин', h: 'ч', sum: 'сум', back: 'Назад', next: 'Далее', save: 'Сохранить', cancel: 'Отмена', close: 'Закрыть', retry: 'Повторить',
   edit: 'Изменить', add: 'Добавить', today: 'Сегодня', tomorrow: 'Завтра', or: 'или',
-  demoBanner: 'Демо-режим — данные хранятся только в этом браузере.', resetDemo: 'Сбросить демо', poweredBy: 'Запись через Navbat',
+  demoBanner: 'Демо-режим — данные хранятся только в этом браузере.', resetDemo: 'Сбросить демо', poweredBy: 'Запись через Barber',
   loadFailed: 'Не удалось загрузить. Проверьте связь и повторите.',
 
   err_slot_taken: 'Это время только что заняли. Выберите другое.',
@@ -156,9 +190,26 @@ const ru = {
 }
 
 const uz = {
+  err_client_blocked: "Bu raqam uchun onlayn yozilish mavjud emas. Sartaroshxonaga qo'ng'iroq qiling.",
+  err_too_late_to_cancel: "Onlayn bekor qilish uchun kech. Sartaroshxonaga qo'ng'iroq qiling.",
+  err_telegram_signature_invalid: "Telegram orqali kirishni tekshirib bo'lmadi.", err_telegram_login_expired: 'Telegram orqali kirish eskirgan. Qayta urining.', err_auth_failed: "Kirib bo'lmadi. Qayta urining.",
+  loginWithTelegram: 'Telegram orqali kirish', orEmail: 'yoki email bilan', telegramNotConfigured: 'Bu sayt uchun Telegram sozlanmagan.',
+  tgReminders: 'Telegramda eslatma olish', tgRemindersHint: "Tasdiq, tashrifdan oldin eslatma va har qanday o'zgarish.", tgLinked: 'Telegram eslatmalari yoqilgan', tgOpenBot: 'Botni ochish',
+  tgIdentify: 'Telegram bilan davom etish', tgIdentified: 'Eslatmalar Telegramingizga keladi',
+  cancelUntil: 'Bepul bekor qilish muddati', cancelClosed: "Onlayn bekor qilish yopiq — sartaroshxonaga qo'ng'iroq qiling", policyNote: 'Tashrifdan {h} soat oldingacha bepul bekor qilish mumkin',
+  waitlistTitle: "Bo'sh vaqt yo'qmi? Navbatga yoziling", waitlistHint: "Shu kuni vaqt bo'shasa, Telegramda xabar beramiz.", joinWaitlist: 'Navbatga yozilish', waitlistJoined: 'Siz shu kun uchun kutish ro‘yxatidasiz.',
+  waitlist: "Kutish ro'yxati", waitlistEmpty: 'Bu kun uchun hech kim kutmayapti.', waitlist_waiting: 'Kutmoqda', waitlist_notified: 'Xabar berildi', waitlist_booked: 'Yozildi', waitlist_cancelled: "Olib tashlandi",
+  rebook: 'Xuddi shunga yozilish', links: 'Havolalar', instagram: 'Instagram', telegramChannel: 'Telegram', mapsUrl: 'Xarita havolasi (Yandex / Google)', openMap: 'Xaritani ochish',
+  bufferTime: 'Tashriflar orasidagi tanaffus', cancelHours: 'Bepul bekor qilish muddati', hoursBefore: 'soat oldin', closedDates: 'Yopiq kunlar', closedDatesHint: 'Bayramlar va haftalik jadvaldan tashqari dam olish kunlari.', addDate: "Sana qo'shish",
+  telegramSection: 'Telegram bildirishnomalari', tgConnect: 'Telegramni ulash', tgConnected: 'Ulangan — yangi yozuvlar Telegramga keladi', tgConnectHint: 'Botni telefoningizdan bir marta oching — u shu sartaroshxonani ulaydi.',
+  notifyNewBooking: 'Yangi onlayn yozuv', dailySummary: 'Ertalabki xulosa', summaryOff: "O'chiq", reminderHours: 'Mijozlarga eslatma', reminderHoursHint: 'Tashrifdan necha soat oldin, masalan 24 va 2.',
+  shareTitle: 'Yozilish havolangiz', shareHint: "Instagram bio va Telegram kanalga qo'ying, QR kodni oyna yoniga chop eting.", downloadQr: 'QR yuklab olish', copyLinkBtn: 'Havolani nusxalash',
+  clientCard: 'Mijoz', clientNote: 'Shaxsiy izoh', clientNoteHint: "Faqat siz ko'rasiz — afzalliklar, nasadka raqamlari, allergiyalar.", blockClient: "Onlayn yozilishni ta'qiqlash", unblockClient: 'Onlayn yozilishga ruxsat', blockedTag: 'Bloklangan', history: 'Tarix', exportCsv: 'CSV eksport',
+  category: 'Kategoriya', categoryHint: 'Ixtiyoriy — yozilish sahifasida xizmatlarni guruhlaydi', busiestHours: 'Eng band soatlar',
+  pwaHint: "Tez kirish uchun bosh ekranga qo'shing.", sourceOnline: 'onlayn', sourceBarber: 'yozilmasdan',
   min: 'daq', h: 'soat', sum: "so'm", back: 'Orqaga', next: 'Keyingi', save: 'Saqlash', cancel: 'Bekor qilish', close: 'Yopish', retry: 'Qayta urinish',
   edit: 'Tahrirlash', add: "Qo'shish", today: 'Bugun', tomorrow: 'Ertaga', or: 'yoki',
-  demoBanner: "Demo rejim — ma'lumotlar faqat shu brauzerda saqlanadi.", resetDemo: 'Demoni tiklash', poweredBy: 'Navbat orqali yozilish',
+  demoBanner: "Demo rejim — ma'lumotlar faqat shu brauzerda saqlanadi.", resetDemo: 'Demoni tiklash', poweredBy: 'Barber orqali yozilish',
   loadFailed: "Yuklab bo'lmadi. Internetni tekshirib, qayta urining.",
 
   err_slot_taken: 'Bu vaqt hozirgina band qilindi. Boshqasini tanlang.',
@@ -260,12 +311,14 @@ export function I18nProvider({ children }) {
   const value = useMemo(() => {
     const dict = DICTS[lang]
     const t = (key) => dict[key] ?? en[key] ?? key
+    const tf = (key, vars) => Object.entries(vars).reduce((acc, [k, v]) => acc.replaceAll(`{${k}}`, String(v)), t(key))
     const locale = LOCALES[lang]
     return {
-      lang, setLang, t, locale,
+      lang, setLang, t, tf, locale,
       errorText: (err) => t(`err_${err?.code || 'unknown_error'}`),
       money: (value, currency = 'UZS') => `${Math.round(Number(value) || 0).toLocaleString('ru-RU')} ${currency === 'UZS' ? dict.sum : currency}`,
       weekdayShort: (iso) => new Intl.DateTimeFormat(locale, { weekday: 'short', timeZone: 'UTC' }).format(new Date(iso + 'T00:00:00Z')),
+      dateTime: (isoTs) => new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }).format(new Date(isoTs)),
       dayLong: (iso) => new Intl.DateTimeFormat(locale, { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC' }).format(new Date(iso + 'T00:00:00Z')),
       dayMonth: (iso) => new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'short', timeZone: 'UTC' }).format(new Date(iso + 'T00:00:00Z')),
       monthShort: (ym) => new Intl.DateTimeFormat(locale, { month: 'short', timeZone: 'UTC' }).format(new Date(ym + '-01T00:00:00Z')),

@@ -1,12 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Link, useNavigate, useParams } from 'react-router-dom'
-import { Check, Clock, MapPin, Phone, Scissors, Users } from 'lucide-react'
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
+import { Check, Clock, Instagram, MapPin, Phone, Scissors, Send, Users } from 'lucide-react'
 import { api, isDemo } from '../lib/api.js'
 import { useI18n } from '../lib/i18n.jsx'
 import { useAsync } from '../lib/useAsync.js'
 import { addDays, formatDuration, minToLabel, nowInZone } from '../lib/time.js'
-import { availableStarts, hoursFor, totalDuration } from '../lib/slots.js'
-import { ErrorNote, LangSwitch, Shimmer, Stars, ThemeToggle } from '../components/ui.jsx'
+import { availableStarts, isClosed, slotOptionsFor, totalDuration } from '../lib/slots.js'
+import { hasTelegram } from '../lib/telegram.js'
+import { ErrorNote, LangSwitch, Shimmer, Stars, TelegramLoginButton, ThemeToggle } from '../components/ui.jsx'
 
 const CONTACT_KEY = 'nb-contact'
 
@@ -81,8 +82,9 @@ function ShopShimmer() {
 }
 
 function ShopBody({ shop }) {
-  const { t, money, errorText, weekdayShort, dayLong } = useI18n()
+  const { t, tf, lang, money, weekdayShort, dayLong } = useI18n()
   const navigate = useNavigate()
+  const [params] = useSearchParams()
   const servicesQ = useAsync(() => api.listServices(shop.id), [shop.id])
   const statsQ = useAsync(() => api.getPublicStats(shop.id), [shop.id])
   const reviewsQ = useAsync(() => api.listReviews(shop.id), [shop.id])
@@ -91,7 +93,13 @@ function ShopBody({ shop }) {
   const lastDay = addDays(now.date, shop.booking_days)
   const busyQ = useAsync(() => api.getBusy(shop.id, now.date, lastDay), [shop.id, now.date, lastDay])
 
-  const [picked, setPicked] = useState([])
+  // "Book the same again" links arrive with ?services=id,id
+  const [picked, setPicked] = useState(() => (params.get('services') || '').split(',').filter(Boolean))
+  const [telegram, setTelegram] = useState(null)
+  const [waitName, setWaitName] = useState('')
+  const [waitPhone, setWaitPhone] = useState('')
+  const [waitState, setWaitState] = useState('idle') // idle | busy | done
+  const [waitError, setWaitError] = useState(null)
   const [date, setDate] = useState(null)
   const [start, setStart] = useState(null)
   const saved = useMemo(loadContact, [])
@@ -113,10 +121,7 @@ function ShopBody({ shop }) {
     if (!duration || !busyQ.data) return {}
     const out = {}
     for (const d of days) {
-      out[d] = availableStarts({
-        date: d, hours: shop.hours, duration, busy: busyQ.data.filter((b) => b.date === d),
-        step: shop.slot_step, now, leadMin: shop.lead_min,
-      })
+      out[d] = availableStarts({ date: d, ...slotOptionsFor(shop), duration, busy: busyQ.data.filter((b) => b.date === d), now })
     }
     return out
   }, [duration, busyQ.data, days, shop, now])
@@ -147,7 +152,7 @@ function ShopBody({ shop }) {
     setSubmitting(true)
     setError(null)
     try {
-      const token = await api.createBooking({ shopId: shop.id, serviceIds: picked, date, startMin: start, name, phone, note })
+      const token = await api.createBooking({ shopId: shop.id, serviceIds: picked, date, startMin: start, name, phone, note, lang, telegram })
       try { localStorage.setItem(CONTACT_KEY, JSON.stringify({ name: name.trim(), phone: phone.trim() })) } catch { /* ignore */ }
       navigate(`/b/${token}?new=1`)
     } catch (err) {
@@ -161,8 +166,23 @@ function ShopBody({ shop }) {
     }
   }
 
+  const onTelegram = (user) => {
+    setTelegram(user)
+    if (!name.trim() && user?.first_name) setName([user.first_name, user.last_name].filter(Boolean).join(' '))
+  }
+  async function joinWaitlist(e) {
+    e.preventDefault()
+    setWaitState('busy'); setWaitError(null)
+    try {
+      await api.joinWaitlist({ shopId: shop.id, date, name: waitName || name, phone: waitPhone || phone, lang })
+      setWaitState('done')
+    } catch (err) { setWaitError(err); setWaitState('idle') }
+  }
+  useEffect(() => { setWaitState('idle'); setWaitError(null) }, [date])
+
   const stats = statsQ.data
   const daySlots = (date && slotsByDay[date]) || []
+  const categories = [...new Set(services.map((s) => s.category || ''))]
   const groups = [
     ['morning', daySlots.filter((m) => m < 12 * 60)],
     ['afternoon', daySlots.filter((m) => m >= 12 * 60 && m < 17 * 60)],
@@ -198,10 +218,14 @@ function ShopBody({ shop }) {
               ) : <Shimmer className="h-9 w-32" />}
             </div>
           </div>
-          {(shop.address || shop.phone) && (
+          {(shop.address || shop.phone || shop.instagram || shop.telegram) && (
             <div className="c-body mt-4 flex flex-wrap gap-x-5 gap-y-1.5 text-[14px]">
-              {shop.address && <span className="flex items-center gap-1.5"><MapPin size={15} className="c-gold" />{shop.address}</span>}
+              {shop.address && (shop.maps_url
+                ? <a href={shop.maps_url} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 hover:underline"><MapPin size={15} className="c-gold" />{shop.address}</a>
+                : <span className="flex items-center gap-1.5"><MapPin size={15} className="c-gold" />{shop.address}</span>)}
               {shop.phone && <a href={`tel:${shop.phone.replace(/\s/g, '')}`} className="flex items-center gap-1.5 hover:underline"><Phone size={15} className="c-gold" />{shop.phone}</a>}
+              {shop.instagram && <a href={`https://instagram.com/${shop.instagram.replace(/^@/, '')}`} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 hover:underline"><Instagram size={15} className="c-gold" />@{shop.instagram.replace(/^@/, '')}</a>}
+              {shop.telegram && <a href={`https://t.me/${shop.telegram.replace(/^@/, '')}`} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 hover:underline"><Send size={15} className="c-gold" />@{shop.telegram.replace(/^@/, '')}</a>}
             </div>
           )}
         </section>
@@ -210,10 +234,14 @@ function ShopBody({ shop }) {
         <section>
           <StepTitle n={1} title={t('chooseServices')} hint={t('chooseServicesHint')} />
           {servicesQ.error ? <ErrorNote error="loadFailed" onRetry={servicesQ.reload} /> : (
-            <div className="grid gap-2.5 sm:grid-cols-2">
+            <div className="space-y-3">
               {servicesQ.loading && !servicesQ.data
-                ? [0, 1, 2, 3].map((i) => <Shimmer key={i} className="h-[84px] rounded-[22px]" />)
-                : services.map((s) => {
+                ? <div className="grid gap-2.5 sm:grid-cols-2">{[0, 1, 2, 3].map((i) => <Shimmer key={i} className="h-[84px] rounded-[22px]" />)}</div>
+                : categories.map((cat) => (
+                  <div key={cat || '_'}>
+                    {categories.length > 1 && cat && <h3 className="c-muted mb-1.5 text-[12px] font-medium uppercase tracking-wide">{cat}</h3>}
+                    <div className="grid gap-2.5 sm:grid-cols-2">
+                      {services.filter((s) => (s.category || '') === cat).map((s) => {
                   const on = picked.includes(s.id)
                   return (
                     <button
@@ -236,7 +264,10 @@ function ShopBody({ shop }) {
                       </span>
                     </button>
                   )
-                })}
+                      })}
+                    </div>
+                  </div>
+                ))}
             </div>
           )}
         </section>
@@ -248,7 +279,7 @@ function ShopBody({ shop }) {
             <div className="glass rise rounded-[24px] p-4">
               <div className="fade-edges no-scrollbar -mx-4 flex gap-2 overflow-x-auto px-4 pb-1">
                 {days.map((d, i) => {
-                  const off = hoursFor(shop.hours, d).off
+                  const off = isClosed(shop, d)
                   const free = slotsByDay[d]?.length || 0
                   return (
                     <button
@@ -269,10 +300,21 @@ function ShopBody({ shop }) {
               {date && <p className="c-title mt-4 text-[15px] font-semibold capitalize">{dayLong(date)}</p>}
               {!busyQ.data ? (
                 <div className="mt-3 grid grid-cols-4 gap-2 sm:grid-cols-6">{Array.from({ length: 12 }, (_, i) => <Shimmer key={i} className="h-10 rounded-xl" />)}</div>
-              ) : hoursFor(shop.hours, date || now.date).off ? (
+              ) : isClosed(shop, date || now.date) ? (
                 <p className="c-muted mt-3 text-[14px]">{t('dayOff')}</p>
               ) : !groups.length ? (
-                <p className="c-muted mt-3 text-[14px]">{t('noSlots')}</p>
+                <div className="soft mt-3 rounded-2xl p-4">
+                  <p className="c-title text-[15px] font-semibold">{t('waitlistTitle')}</p>
+                  <p className="c-muted mt-0.5 text-[13px]">{t('waitlistHint')}</p>
+                  {waitState === 'done' ? <p className="pill-ok mt-3 rounded-xl px-3 py-2 text-[14px]">{t('waitlistJoined')}</p> : (
+                    <form onSubmit={joinWaitlist} className="mt-3 flex flex-col gap-2 sm:flex-row">
+                      <input className="field" placeholder={t('name')} value={waitName || name} onChange={(e) => setWaitName(e.target.value)} required />
+                      <input className="field tabular-nums" type="tel" placeholder={t('phone')} value={waitPhone || phone} onChange={(e) => setWaitPhone(e.target.value)} required />
+                      <button type="submit" disabled={waitState === 'busy'} className="btn-primary shrink-0 rounded-full px-5 py-2.5 text-[14px] font-semibold">{t('joinWaitlist')}</button>
+                    </form>
+                  )}
+                  {waitError && <div className="mt-2"><ErrorNote error={waitError} /></div>}
+                </div>
               ) : groups.map(([label, list]) => (
                 <div key={label} className="mt-3">
                   <div className="c-muted mb-1.5 text-[12px] font-medium uppercase tracking-wide">{t(label)}</div>
@@ -308,6 +350,19 @@ function ShopBody({ shop }) {
                 <span className="c-muted mb-1.5 block text-[13px] font-medium">{t('note')}</span>
                 <textarea className="field" rows={3} value={note} onChange={(e) => setNote(e.target.value)} placeholder={t('notePlaceholder')} maxLength={500} />
               </label>
+              {hasTelegram() && (
+                <div className="soft rounded-2xl p-3">
+                  {telegram ? (
+                    <p className="c-ok flex items-center gap-2 text-[14px] font-medium"><Check size={16} />{t('tgIdentified')}</p>
+                  ) : (
+                    <>
+                      <p className="c-muted mb-2 text-[13px]">{t('tgRemindersHint')}</p>
+                      <TelegramLoginButton onAuth={onTelegram} requestWrite />
+                    </>
+                  )}
+                </div>
+              )}
+              {shop.cancel_hours > 0 && <p className="c-muted text-[12px]">{tf('policyNote', { h: shop.cancel_hours })}</p>}
               {error && <ErrorNote error={error} />}
               <button type="submit" disabled={!ready || submitting} className="btn-primary hidden w-full rounded-full py-3.5 text-[16px] font-semibold lg:block">
                 {submitting ? t('booking') : t('confirmBooking')}
@@ -343,7 +398,6 @@ function ShopBody({ shop }) {
               {start == null ? t('chooseTime') : submitting ? t('booking') : t('confirmBooking')}
             </button>
           </div>
-          {error && <p className="c-bad mx-auto mt-2 max-w-xl text-[13px]">{errorText(error)}</p>}
         </div>
       )}
     </main>

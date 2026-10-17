@@ -1,9 +1,10 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { NavLink, Navigate, Route, Routes } from 'react-router-dom'
-import { CalendarDays, ExternalLink, LogOut, MessageSquareHeart, Scissors, Settings, Users } from 'lucide-react'
+import { CalendarDays, ExternalLink, LogOut, MessageSquareHeart, Scissors, Send, Settings, Users } from 'lucide-react'
 import { api, isDemo } from '../../lib/api.js'
 import { useI18n } from '../../lib/i18n.jsx'
-import { ErrorNote, Field, LangSwitch, Logo, Shimmer, ThemeToggle } from '../../components/ui.jsx'
+import { ErrorNote, Field, LangSwitch, Logo, Shimmer, TelegramLoginButton, ThemeToggle } from '../../components/ui.jsx'
+import { hasTelegram } from '../../lib/telegram.js'
 import CalendarView from './CalendarView.jsx'
 import Services from './Services.jsx'
 import Clients from './Clients.jsx'
@@ -55,6 +56,11 @@ function Login({ onSession }) {
   const [error, setError] = useState(null)
   const [notice, setNotice] = useState('')
 
+  const onTelegram = useCallback(async (user) => {
+    setBusy(true); setError(null)
+    try { onSession(await api.telegramSignIn(user)) } catch (err) { setError(err); setBusy(false) }
+  }, [onSession])
+
   async function submit(e) {
     e.preventDefault()
     setBusy(true); setError(null); setNotice('')
@@ -75,9 +81,18 @@ function Login({ onSession }) {
       <form onSubmit={submit} className="glass rise space-y-3 rounded-[28px] p-6">
         <h1 className="serif c-title text-[32px] font-semibold">{t('barberLogin')}</h1>
         {isDemo ? (
-          <button type="submit" disabled={busy} className="btn-primary w-full rounded-full py-3 font-semibold">{t('signIn')} (demo)</button>
+          <>
+            <TelegramLoginButton onAuth={onTelegram} demoFallback={
+              <button type="button" disabled={busy} onClick={() => onTelegram({ id: 1 })} className="btn-ghost flex w-full items-center justify-center gap-2 rounded-full py-3 font-semibold"><Send size={16} className="c-gold" />{t('loginWithTelegram')} (demo)</button>
+            } />
+            <button type="submit" disabled={busy} className="btn-primary w-full rounded-full py-3 font-semibold">{t('signIn')} (demo)</button>
+          </>
         ) : (
           <>
+            {hasTelegram() && <>
+              <TelegramLoginButton onAuth={onTelegram} />
+              <div className="c-muted flex items-center gap-3 text-[12px]"><span className="b-line h-px flex-1 border-t" />{t('orEmail')}<span className="b-line h-px flex-1 border-t" /></div>
+            </>}
             <Field label={t('email')}><input className="field" type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" required /></Field>
             <Field label={t('password')}><input className="field" type="password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete={mode === 'in' ? 'current-password' : 'new-password'} minLength={6} required /></Field>
             {error && <ErrorNote error={error} />}
