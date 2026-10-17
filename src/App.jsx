@@ -1,4 +1,4 @@
-import { Navigate, Route, Routes } from 'react-router-dom'
+import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import Landing from './pages/Landing.jsx'
 import ShopPage from './pages/ShopPage.jsx'
 import BookingPage from './pages/BookingPage.jsx'
@@ -7,8 +7,12 @@ import { isConfigured } from './lib/api.js'
 import { useI18n } from './lib/i18n.jsx'
 
 export default function App() {
+  const { pathname } = useLocation()
   if (!isConfigured) return <NotConfigured />
+  // Keyed by the top-level section so moving between pages animates in, but tabs inside /admin don't remount.
+  const section = pathname.split('/')[1] || 'home'
   return (
+    <div key={section} className="page-in">
     <Routes>
       <Route path="/" element={<Landing />} />
       <Route path="/admin/*" element={<AdminApp />} />
@@ -16,6 +20,7 @@ export default function App() {
       <Route path="/:slug" element={<ShopPage />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
+    </div>
   )
 }
 
