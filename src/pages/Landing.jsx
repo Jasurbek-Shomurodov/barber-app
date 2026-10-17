@@ -2,6 +2,14 @@ import { Link } from 'react-router-dom'
 import { ArrowRight, CalendarDays, Link2, MessageSquareHeart } from 'lucide-react'
 import { useI18n } from '../lib/i18n.jsx'
 import { LangSwitch, Logo, ThemeSwitch } from '../components/ui.jsx'
+import hero640 from '../assets/hero-640.webp'
+import hero1080 from '../assets/hero-1080.webp'
+import hero1600 from '../assets/hero-1600.webp'
+import hero2000 from '../assets/hero-2000.webp'
+import heroLqip from '../assets/hero-lqip.webp'
+
+// Hashed by Vite, so vercel.json can cache them forever; the tiny blurred preview is inlined.
+const HERO_SRCSET = `${hero640} 640w, ${hero1080} 1080w, ${hero1600} 1600w, ${hero2000} 2000w`
 
 export default function Landing() {
   const { t } = useI18n()
@@ -13,10 +21,12 @@ export default function Landing() {
   return (
     <div className="min-h-dvh">
       <section className="hero relative isolate overflow-hidden text-center">
+        <div aria-hidden="true" className="absolute inset-0 -z-10 scale-110 bg-cover bg-center blur-xl" style={{ backgroundImage: `url(${heroLqip})` }} />
         <img
-          src="/hero-barbershop.webp"
-          srcSet="/hero-barbershop-900.webp 900w, /hero-barbershop.webp 2000w"
+          src={hero1080}
+          srcSet={HERO_SRCSET}
           sizes="100vw"
+          decoding="async"
           alt=""
           fetchpriority="high"
           className="absolute inset-0 -z-10 h-full w-full object-cover"
