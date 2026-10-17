@@ -1,13 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { Check, Clock, Instagram, MapPin, Phone, Scissors, Send, Users } from 'lucide-react'
-import { api, isDemo } from '../lib/api.js'
+import { api } from '../lib/api.js'
 import { useI18n } from '../lib/i18n.jsx'
 import { useAsync } from '../lib/useAsync.js'
 import { addDays, formatDuration, minToLabel, nowInZone } from '../lib/time.js'
 import { availableStarts, isClosed, slotOptionsFor, totalDuration } from '../lib/slots.js'
 import { hasTelegram } from '../lib/telegram.js'
-import { ErrorNote, LangSwitch, Shimmer, Stars, TelegramLoginButton, ThemeToggle } from '../components/ui.jsx'
+import { ErrorNote, LangSwitch, Shimmer, Stars, TelegramLoginButton, ThemeSwitch } from '../components/ui.jsx'
 
 const CONTACT_KEY = 'nb-contact'
 
@@ -30,9 +30,6 @@ function Frame({ shop, children }) {
   const { t } = useI18n()
   return (
     <div className="min-h-dvh">
-      {isDemo && (
-        <div className="pill-warn px-4 py-2 text-center text-[13px]">{t('demoBanner')}</div>
-      )}
       <header className="header-bar sticky top-0 z-30">
         <div className="mx-auto flex h-14 max-w-6xl items-center justify-between gap-3 px-4">
           <div className="flex min-w-0 items-center gap-2.5">
@@ -43,7 +40,7 @@ function Frame({ shop, children }) {
           </div>
           <div className="flex items-center gap-2">
             <LangSwitch />
-            <ThemeToggle />
+            <ThemeSwitch />
           </div>
         </div>
       </header>

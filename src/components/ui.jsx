@@ -1,5 +1,5 @@
 import { useEffect, useId, useRef, useState } from 'react'
-import { Moon, Star, Sun, X } from 'lucide-react'
+import { Monitor, Moon, Star, Sun, X } from 'lucide-react'
 import { LANGS, useI18n } from '../lib/i18n.jsx'
 import { hasTelegram, mountLoginWidget } from '../lib/telegram.js'
 
@@ -46,30 +46,42 @@ export function LangSwitch() {
   )
 }
 
-function currentDark() {
-  const set = document.documentElement.dataset.theme
-  if (set) return set === 'dark'
-  return window.matchMedia?.('(prefers-color-scheme: dark)').matches
-}
+const THEMES = [
+  ['system', Monitor, 'themeSystem'],
+  ['light', Sun, 'themeLight'],
+  ['dark', Moon, 'themeDark'],
+]
 
-export function ThemeToggle() {
-  const [dark, setDark] = useState(currentDark)
-  useEffect(() => {
-    const mq = window.matchMedia?.('(prefers-color-scheme: dark)')
-    const onChange = () => { if (!document.documentElement.dataset.theme) setDark(mq.matches) }
-    mq?.addEventListener('change', onChange)
-    return () => mq?.removeEventListener('change', onChange)
-  }, [])
-  const toggle = () => {
-    const next = dark ? 'light' : 'dark'
-    document.documentElement.dataset.theme = next
-    try { localStorage.setItem('nb-theme', next) } catch { /* ignore */ }
-    setDark(!dark)
+// System by default; light/dark pin the theme and persist in localStorage (read in index.html).
+export function ThemeSwitch() {
+  const { t } = useI18n()
+  const [mode, setMode] = useState(() => document.documentElement.dataset.theme || 'system')
+  const choose = (next) => {
+    const root = document.documentElement
+    if (next === 'system') delete root.dataset.theme
+    else root.dataset.theme = next
+    try {
+      if (next === 'system') localStorage.removeItem('nb-theme')
+      else localStorage.setItem('nb-theme', next)
+    } catch { /* ignore */ }
+    setMode(next)
   }
   return (
-    <button type="button" onClick={toggle} className="btn-ghost grid h-9 w-9 place-items-center rounded-full" aria-label="Theme">
-      {dark ? <Sun size={16} /> : <Moon size={16} />}
-    </button>
+    <div className="soft flex rounded-full p-0.5" role="group" aria-label={t('theme')}>
+      {THEMES.map(([code, Icon, label]) => (
+        <button
+          key={code}
+          type="button"
+          onClick={() => choose(code)}
+          aria-pressed={mode === code}
+          aria-label={t(label)}
+          title={t(label)}
+          className={`grid h-7 w-7 place-items-center rounded-full transition ${mode === code ? 'bg-[var(--soft-strong)] c-title shadow-sm' : 'c-muted'}`}
+        >
+          <Icon size={14} />
+        </button>
+      ))}
+    </div>
   )
 }
 
@@ -167,10 +179,10 @@ export function StatusPill({ status }) {
   return <span className={`${cls} inline-flex rounded-full px-2.5 py-0.5 text-[12px] font-semibold`}>{t(`status_${status}`)}</span>
 }
 
-/** Telegram Login Widget. Renders nothing when VITE_TELEGRAM_BOT is unset; `demoFallback` draws a plain button instead. */
-export function TelegramLoginButton({ onAuth, requestWrite = false, demoFallback = null }) {
+/** Telegram Login Widget. Renders nothing when VITE_TELEGRAM_BOT is unset. */
+export function TelegramLoginButton({ onAuth, requestWrite = false }) {
   const ref = useRef(null)
   useEffect(() => mountLoginWidget(ref.current, { onAuth, requestWrite }), [onAuth, requestWrite])
-  if (!hasTelegram()) return demoFallback
+  if (!hasTelegram()) return null
   return <div ref={ref} className="flex min-h-[40px] justify-center" />
 }

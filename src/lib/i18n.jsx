@@ -1,4 +1,5 @@
 import { createContext, useCallback, useContext, useMemo, useState } from 'react'
+import { platformLang } from './lang.js'
 
 // Presentation-only translations. Changing the language never refetches data; stored
 // error codes are translated at render time with t(`err_${code}`).
@@ -23,7 +24,7 @@ const en = {
   pwaHint: 'Add to home screen for one-tap access.', sourceOnline: 'online', sourceBarber: 'walk-in',
   min: 'min', h: 'h', sum: 'UZS', back: 'Back', next: 'Next', save: 'Save', cancel: 'Cancel', close: 'Close', retry: 'Try again',
   edit: 'Edit', add: 'Add', today: 'Today', tomorrow: 'Tomorrow', or: 'or',
-  demoBanner: 'Demo mode — data is stored only in this browser.', resetDemo: 'Reset demo', poweredBy: 'Booking by Barber',
+  poweredBy: 'Booking by Barber',
   loadFailed: 'Could not load. Check the connection and try again.',
 
   err_slot_taken: 'This time was just taken. Please pick another one.',
@@ -65,6 +66,7 @@ const en = {
   noAccount: 'New here? Create an account', haveAccount: 'Already have an account? Sign in', checkEmail: 'Check your email to confirm the account, then sign in.',
   createShop: 'Create your barbershop', shopName: 'Barbershop name', shopSlug: 'Page link', createShopHint: 'Clients will book at this link.', createShopBtn: 'Create',
   nav_calendar: 'Calendar', nav_services: 'Services', nav_clients: 'Clients', nav_feedback: 'Feedback', nav_settings: 'Settings',
+  theme: 'Theme', themeSystem: 'System', themeLight: 'Light', themeDark: 'Dark',
   signOut: 'Sign out', publicPage: 'Booking page', openPage: 'Open',
 
   day: 'Day', week: 'Week', newBooking: 'New booking', blockTime: 'Block time', blocked: 'Blocked',
@@ -90,7 +92,8 @@ const en = {
   saved: 'Saved', saveChanges: 'Save changes',
 
   heroTitle: 'Bookings for barbers, without the phone calls', heroSub: 'Clients pick a service and a free time in seconds. You see your whole day in one calendar.',
-  tryDemo: 'Open demo booking page', barberArea: 'Barber dashboard',
+  barberArea: 'Barber dashboard',
+  notConfigured: 'Site is not configured', notConfiguredHint: 'Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY, then rebuild.',
   feat1: 'Online booking', feat1d: 'A personal link for Instagram and Telegram. Only free times are shown — no double bookings.',
   feat2: 'Calendar', feat2d: 'Day and week views, walk-ins, breaks, done and no-show in one tap.',
   feat3: 'Clients & feedback', feat3d: 'How many clients you served, who returns, and what they say.',
@@ -116,7 +119,7 @@ const ru = {
   pwaHint: 'Добавьте на главный экран для быстрого доступа.', sourceOnline: 'онлайн', sourceBarber: 'без записи',
   min: 'мин', h: 'ч', sum: 'сум', back: 'Назад', next: 'Далее', save: 'Сохранить', cancel: 'Отмена', close: 'Закрыть', retry: 'Повторить',
   edit: 'Изменить', add: 'Добавить', today: 'Сегодня', tomorrow: 'Завтра', or: 'или',
-  demoBanner: 'Демо-режим — данные хранятся только в этом браузере.', resetDemo: 'Сбросить демо', poweredBy: 'Запись через Barber',
+  poweredBy: 'Запись через Barber',
   loadFailed: 'Не удалось загрузить. Проверьте связь и повторите.',
 
   err_slot_taken: 'Это время только что заняли. Выберите другое.',
@@ -158,6 +161,7 @@ const ru = {
   noAccount: 'Впервые здесь? Создайте аккаунт', haveAccount: 'Уже есть аккаунт? Войти', checkEmail: 'Подтвердите аккаунт по ссылке из письма, затем войдите.',
   createShop: 'Создайте барбершоп', shopName: 'Название', shopSlug: 'Ссылка на страницу', createShopHint: 'По этой ссылке клиенты будут записываться.', createShopBtn: 'Создать',
   nav_calendar: 'Календарь', nav_services: 'Услуги', nav_clients: 'Клиенты', nav_feedback: 'Отзывы', nav_settings: 'Настройки',
+  theme: 'Тема', themeSystem: 'Системная', themeLight: 'Светлая', themeDark: 'Тёмная',
   signOut: 'Выйти', publicPage: 'Страница записи', openPage: 'Открыть',
 
   day: 'День', week: 'Неделя', newBooking: 'Новая запись', blockTime: 'Закрыть время', blocked: 'Занято',
@@ -183,7 +187,8 @@ const ru = {
   saved: 'Сохранено', saveChanges: 'Сохранить',
 
   heroTitle: 'Запись к барберу без звонков', heroSub: 'Клиент за секунды выбирает услугу и свободное время. Вы видите весь день в одном календаре.',
-  tryDemo: 'Открыть демо-страницу записи', barberArea: 'Кабинет мастера',
+  barberArea: 'Кабинет мастера',
+  notConfigured: 'Сайт не настроен', notConfiguredHint: 'Укажите VITE_SUPABASE_URL и VITE_SUPABASE_ANON_KEY и пересоберите.',
   feat1: 'Онлайн-запись', feat1d: 'Личная ссылка для Instagram и Telegram. Показывается только свободное время — без двойных записей.',
   feat2: 'Календарь', feat2d: 'День и неделя, клиенты без записи, перерывы, «готово» и «не пришёл» в одно касание.',
   feat3: 'Клиенты и отзывы', feat3d: 'Сколько клиентов обслужено, кто возвращается и что о вас пишут.',
@@ -209,7 +214,7 @@ const uz = {
   pwaHint: "Tez kirish uchun bosh ekranga qo'shing.", sourceOnline: 'onlayn', sourceBarber: 'yozilmasdan',
   min: 'daq', h: 'soat', sum: "so'm", back: 'Orqaga', next: 'Keyingi', save: 'Saqlash', cancel: 'Bekor qilish', close: 'Yopish', retry: 'Qayta urinish',
   edit: 'Tahrirlash', add: "Qo'shish", today: 'Bugun', tomorrow: 'Ertaga', or: 'yoki',
-  demoBanner: "Demo rejim — ma'lumotlar faqat shu brauzerda saqlanadi.", resetDemo: 'Demoni tiklash', poweredBy: 'Barber orqali yozilish',
+  poweredBy: 'Barber orqali yozilish',
   loadFailed: "Yuklab bo'lmadi. Internetni tekshirib, qayta urining.",
 
   err_slot_taken: 'Bu vaqt hozirgina band qilindi. Boshqasini tanlang.',
@@ -251,6 +256,7 @@ const uz = {
   noAccount: "Yangimisiz? Ro'yxatdan o'ting", haveAccount: 'Akkauntingiz bormi? Kiring', checkEmail: 'Xatdagi havola orqali akkauntni tasdiqlang, keyin kiring.',
   createShop: 'Sartaroshxonangizni yarating', shopName: 'Nomi', shopSlug: 'Sahifa havolasi', createShopHint: 'Mijozlar shu havola orqali yoziladi.', createShopBtn: 'Yaratish',
   nav_calendar: 'Kalendar', nav_services: 'Xizmatlar', nav_clients: 'Mijozlar', nav_feedback: 'Fikrlar', nav_settings: 'Sozlamalar',
+  theme: 'Mavzu', themeSystem: 'Tizim', themeLight: 'Yorug‘', themeDark: 'Qorong‘i',
   signOut: 'Chiqish', publicPage: 'Yozilish sahifasi', openPage: 'Ochish',
 
   day: 'Kun', week: 'Hafta', newBooking: 'Yangi yozuv', blockTime: 'Vaqtni yopish', blocked: 'Band',
@@ -276,7 +282,8 @@ const uz = {
   saved: 'Saqlandi', saveChanges: 'Saqlash',
 
   heroTitle: "Sartaroshlar uchun qo'ng'iroqsiz yozilish", heroSub: "Mijoz bir necha soniyada xizmat va bo'sh vaqtni tanlaydi. Siz butun kunni bitta kalendarda ko'rasiz.",
-  tryDemo: 'Demo yozilish sahifasi', barberArea: 'Usta kabineti',
+  barberArea: 'Usta kabineti',
+  notConfigured: 'Sayt sozlanmagan', notConfiguredHint: 'VITE_SUPABASE_URL va VITE_SUPABASE_ANON_KEY ni kiriting va qayta yig‘ing.',
   feat1: 'Onlayn yozilish', feat1d: "Instagram va Telegram uchun shaxsiy havola. Faqat bo'sh vaqtlar ko'rsatiladi — ikki marta band qilish yo'q.",
   feat2: 'Kalendar', feat2d: "Kun va hafta ko'rinishi, yozilmasdan kelganlar, tanaffuslar, «bajarildi» va «kelmadi» bir bosishda.",
   feat3: 'Mijozlar va fikrlar', feat3d: "Nechta mijozga xizmat qildingiz, kim qaytadi va nima deyishadi.",
@@ -284,19 +291,16 @@ const uz = {
 
 const DICTS = { en, ru, uz }
 export const LANGS = [
-  { code: 'uz', label: "O'z" },
   { code: 'ru', label: 'Ru' },
+  { code: 'uz', label: "O'z" },
   { code: 'en', label: 'En' },
 ]
 const LOCALES = { en: 'en-GB', ru: 'ru-RU', uz: 'uz-Latn-UZ' }
 
 function initialLang() {
-  try {
-    const saved = localStorage.getItem('nb-lang')
-    if (saved && DICTS[saved]) return saved
-  } catch { /* ignore */ }
-  const nav = (navigator.language || 'en').slice(0, 2)
-  return DICTS[nav] ? nav : 'ru'
+  const lang = platformLang()
+  document.documentElement.lang = lang
+  return lang
 }
 
 const I18nContext = createContext(null)

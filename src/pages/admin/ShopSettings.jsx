@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react'
 import { Check, Copy, Download, LogOut, Send, X } from 'lucide-react'
-import { api, isDemo } from '../../lib/api.js'
+import { api } from '../../lib/api.js'
 import { useI18n } from '../../lib/i18n.jsx'
 import { labelToMin, minToLabel } from '../../lib/time.js'
 import { hasTelegram, shopDeepLink } from '../../lib/telegram.js'
-import { ErrorNote, Field, ThemeToggle } from '../../components/ui.jsx'
+import { ErrorNote, Field, ThemeSwitch } from '../../components/ui.jsx'
 import { PageTitle } from './AdminApp.jsx'
 
 const ORDER = [1, 2, 3, 4, 5, 6, 0]
@@ -46,7 +46,7 @@ export default function ShopSettings({ shop, setShop, onSignOut }) {
     <form onSubmit={save} className="max-w-3xl space-y-4">
       <PageTitle title={t('nav_settings')}>
         <div className="flex items-center gap-2 md:hidden">
-          <ThemeToggle />
+          <ThemeSwitch />
           <button type="button" onClick={onSignOut} className="btn-ghost flex items-center gap-1.5 rounded-full px-4 py-2 text-[14px]"><LogOut size={15} />{t('signOut')}</button>
         </div>
       </PageTitle>
@@ -174,11 +174,10 @@ export default function ShopSettings({ shop, setShop, onSignOut }) {
 function TelegramConnect({ shop, setShop }) {
   const { t } = useI18n()
   const [busy, setBusy] = useState(false)
-  if (!hasTelegram() && !isDemo) return <p className="c-muted mt-2 text-[14px]">{t('telegramNotConfigured')}</p>
+  if (!hasTelegram()) return <p className="c-muted mt-2 text-[14px]">{t('telegramNotConfigured')}</p>
   if (shop.owner_chat_id) return <p className="c-ok mt-2 flex items-center gap-2 text-[15px] font-medium"><Check size={18} />{t('tgConnected')}</p>
   async function connect() {
     setBusy(true)
-    if (isDemo) { setShop(await api.linkShopTelegram(shop.id)); setBusy(false); return }
     window.open(shopDeepLink(shop.telegram_link_code), '_blank', 'noopener')
     // The bot links the chat within a second or two; re-read the shop a few times.
     for (let i = 0; i < 6; i++) {

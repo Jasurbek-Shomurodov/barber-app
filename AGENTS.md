@@ -11,7 +11,7 @@ and Telegram login, notifications and reminders. One deployment serves many shop
 | Routes | `src/App.jsx`: `/` landing, `/:slug` booking, `/b/:token` client's booking + feedback, `/admin/*` dashboard |
 | Slot and duration math | `src/lib/slots.js` (buffer, closed dates, lead time) |
 | Client and service stats | `src/lib/stats.js` |
-| Data layer | `src/lib/api.js` picks `supabaseApi.js` (keys set) or `demoApi.js` (localStorage), same method set |
+| Data layer | `src/lib/api.js` → `supabaseApi.js`; without `VITE_SUPABASE_*` the app shows a setup message |
 | Translations | `src/lib/i18n.jsx`: `uz`, `ru`, `en`; `t`, `tf`, money and date formatters |
 | Theme | `src/index.css` tokens (same cream/copper kit as zarkebab.uz), `src/components/ui.jsx` |
 | Database, RLS, RPCs, triggers | `migrations/*.sql` (append-only, numbered) |
@@ -19,7 +19,7 @@ and Telegram login, notifications and reminders. One deployment serves many shop
 | Tests | `tests/*.test.js` (`npm test`), `scripts/check-migrations.mjs` (`npm run sql:check`, PGlite) |
 
 ```bash
-npm run dev        # http://localhost:5180, demo mode without .env
+npm run dev        # http://localhost:5180, needs .env.local with VITE_SUPABASE_URL/ANON_KEY
 npm test
 npm run sql:check
 npm run build

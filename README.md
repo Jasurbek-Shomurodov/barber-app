@@ -29,8 +29,8 @@ npm test
 npm run sql:check  # applies migrations to an in-memory Postgres and exercises the RPCs
 ```
 
-Without Supabase keys the app runs in **demo mode**: a sample shop at `/demo`, data in the
-browser's localStorage, `/admin` signs straight in, Telegram actions are simulated.
+The app needs a Supabase project: copy `.env.example` to `.env.local` and fill
+`VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`. Without them it shows a setup message.
 
 ## Deploy (Vercel + Supabase + Telegram)
 

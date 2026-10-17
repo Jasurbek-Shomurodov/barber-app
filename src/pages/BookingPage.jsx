@@ -1,12 +1,12 @@
 import { useState } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router-dom'
 import { CalendarCheck, Check, Copy, RotateCcw, Scissors, Send } from 'lucide-react'
-import { api, isDemo } from '../lib/api.js'
+import { api } from '../lib/api.js'
 import { bookingDeepLink, hasTelegram } from '../lib/telegram.js'
 import { useI18n } from '../lib/i18n.jsx'
 import { useAsync } from '../lib/useAsync.js'
 import { formatDuration, minToLabel, nowInZone } from '../lib/time.js'
-import { ErrorNote, LangSwitch, Shimmer, Stars, StatusPill, ThemeToggle } from '../components/ui.jsx'
+import { ErrorNote, LangSwitch, Shimmer, Stars, StatusPill, ThemeSwitch } from '../components/ui.jsx'
 
 export default function BookingPage() {
   const { token } = useParams()
@@ -24,7 +24,6 @@ export default function BookingPage() {
   const rebookTo = b ? `/${b.shop_slug}?services=${(b.service_ids || []).join(',')}` : '/'
 
   async function linkTelegram() {
-    if (isDemo) { await api.linkBookingTelegram(token); q.setData({ ...b, telegram_linked: true }); return }
     window.open(bookingDeepLink(token), '_blank', 'noopener')
     setTimeout(() => q.reload(), 8000)
   }
@@ -60,7 +59,7 @@ export default function BookingPage() {
               <span className="serif c-title text-[20px] font-semibold">{t('bookAnother')}</span>
             </Link>
           ) : <span />}
-          <div className="flex items-center gap-2"><LangSwitch /><ThemeToggle /></div>
+          <div className="flex items-center gap-2"><LangSwitch /><ThemeSwitch /></div>
         </div>
       </header>
 
@@ -122,7 +121,7 @@ export default function BookingPage() {
                   {error && <div className="mt-3"><ErrorNote error={error} /></div>}
                 </section>
 
-                {b.status === 'booked' && (hasTelegram() || isDemo) && (
+                {b.status === 'booked' && hasTelegram() && (
                   <section className="glass rounded-[28px] p-5">
                     {b.telegram_linked ? (
                       <p className="c-ok flex items-center gap-2 text-[15px] font-medium"><Check size={18} />{t('tgLinked')}</p>

@@ -20,8 +20,8 @@ codebase. Keep the catalog alive per `review-core` section 6.
 
 - Empty or `full`: the whole codebase. Fan out per `review-core` section 5
   with these groups: public booking (`ShopPage`, `BookingPage`, `slots.js`);
-  dashboard (`src/pages/admin/*`, `stats.js`); data layer (`demoApi.js`,
-  `supabaseApi.js`, `api/`); database (`migrations/`, `scripts/check-migrations.mjs`).
+  dashboard (`src/pages/admin/*`, `stats.js`); data layer (`supabaseApi.js`,
+  `api/`); database (`migrations/`, `scripts/check-migrations.mjs`).
 - `diff`: uncommitted changes (`git diff HEAD` plus untracked files). If the
   tree is clean, review the last commit.
 - A commit, `A..B` range, or branch: `git diff` against it.
@@ -44,8 +44,8 @@ dead code, unused exports or translation keys, debug `console.log`.
 - Slot math: minutes vs labels, `step` loops, `duration` of several services,
   buffer applied on both sides, lead time only for today, `closed_dates`,
   the `now` object in the shop timezone (never `new Date()` local math).
-- Both API layers (`demoApi.js`, `supabaseApi.js`) expose the same methods
-  with the same shapes; the demo mirrors every SQL rule the UI relies on.
+- `slots.js` mirrors every SQL availability rule the UI relies on, so the
+  free times shown are the ones `create_booking` accepts.
 - React: stale closures, missing effect deps, state after unmount, list keys,
   stale responses when the shop, date or filter changes (`useAsync` run id).
 - Async: unchecked Supabase `error`, partial failure leaving UI inconsistent,

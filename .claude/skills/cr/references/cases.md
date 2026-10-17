@@ -16,7 +16,7 @@ Severity if failed (`review-core` section 2): **S0** another client's data reada
 | SLOT-003 | S1 | Buffer applied on both sides in SQL and JS | `rg -n "buffer" migrations src/lib/slots.js` | `int4range(start - buffer, end + buffer)` in SQL; `b.start_min - bufferMin` and `+ bufferMin` in `availableStarts` |
 | SLOT-004 | S1 | Lead time applies to today only; past days closed | Read `availableStarts` and `create_booking` | `earliest` only when `date === now.date`; `date < now.date` → `[]` / `date_out_of_range` |
 | SLOT-005 | S1 | Closed dates and days off agree between UI and SQL | `rg -n "closed_dates" src migrations` | `isClosed` in UI; `p_date = any(closed_dates)` → `outside_hours` in SQL |
-| SLOT-006 | S1 | The demo API mirrors every SQL rule | Compare `demoApi.createBooking` with SQL `create_booking` | blocked client, closed date, buffer (`slotOptionsFor`), lead, window, waitlist promotion |
+| SLOT-006 | S1 | The UI shows only times SQL accepts | Compare `availableStarts` + `slotOptionsFor` with SQL `create_booking` | closed date, buffer, lead, window and hours agree |
 
 ## PROT — client data stays private
 

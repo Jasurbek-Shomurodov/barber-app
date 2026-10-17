@@ -28,7 +28,7 @@ find exactly where it does not. Default to **report only**; fix only with
 ## 1. Understand what "correct" means
 1. Restate the request: what the client or barber should be able to do.
 2. Find the change: `git status`, `git diff`, `git log -5 --stat`, PR.
-3. Trace the path: page → `api.js` method → `demoApi.js` and
+3. Trace the path: page → `api.js` method →
    `supabaseApi.js` → SQL function/trigger → rendering. Write the expected
    values **before** looking at the screen.
 4. Migration involved? `npm run sql:check` first.
@@ -42,10 +42,7 @@ npm run build
 ```
 
 ## 3. Environment
-- Without `.env` the app is in **demo mode** (localStorage, `/demo` shop,
-  `/admin` signs straight in, Telegram buttons simulate linking). Writes are
-  harmless; "Reset demo" in the dashboard reseeds.
-- With Supabase keys the dev server talks to a **real** project: each write
+- There is no demo mode. With Supabase keys the dev server talks to a **real** project: each write
   needs the user's "yes" in chat for that one action, and Telegram messages
   may really be sent. Prefix test data with `QA`.
 - Start `barber-dev` (`.claude/launch.json`) and use the built-in browser;
@@ -87,7 +84,7 @@ private note (saved on blur) and block → blocked phone gets
 dates, buffer, cancel hours, links, reminder hours, summary hour); QR renders
 and downloads; link copies; Telegram connect state.
 
-**TG** — demo: "Open bot" marks the booking linked; real: deep links
+**TG** — deep links
 `?start=b_<token>` / `?start=s_<code>`, the bot reply, `notifications` rows
 (`new_booking`, `confirmed`, `reminder` ×N, `client_cancelled` …) via SQL.
 

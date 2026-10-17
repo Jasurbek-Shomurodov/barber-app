@@ -4,7 +4,7 @@
 
 /* Same warm "lux" kit as zarkebab.uz: cream page, frosted glass cards, copper actions,
    Cormorant Garamond titles over Onest text. Colours are tokens so dark mode is designed,
-   not inverted. */
+   not inverted. Default follows the system; ThemeSwitch can pin light or dark. */
 :root {
   --page: #F6F0E7;
   --page-2: #EFE6D9;
@@ -45,7 +45,7 @@
     color-scheme: dark;
   }
 }
-:root[data-theme="dark"] {
+oot[data-theme="dark"] {
   --page: #120E0B; --page-2: #1A1410; --text: #F6EEE3; --title: #FFF8EE; --body: #E4D8C8; --muted: #B9A994; --gold: #D9A866;
   --line: rgb(255 236 210 / 12%);
   --glass: linear-gradient(180deg, rgb(58 44 33 / 62%) 0%, rgb(30 23 18 / 82%) 100%);
@@ -141,6 +141,39 @@ button { -webkit-tap-highlight-color: transparent; }
 .btn-ghost:active:not(:disabled) { transform: scale(.99); }
 .btn-ghost:disabled { opacity: .5; cursor: not-allowed; }
 .btn-danger { color: var(--bad); }
+
+/* Landing hero: full-bleed photo; text on it keeps fixed colours in both themes. */
+.hero-shade {
+  background:
+    radial-gradient(80% 70% at 50% 40%, rgb(18 12 8 / 50%) 0%, rgb(18 12 8 / 22%) 70%),
+    linear-gradient(180deg, rgb(18 12 8 / 45%) 0%, rgb(18 12 8 / 25%) 35%, rgb(18 12 8 / 55%) 100%);
+}
+/* Frosted strip behind the header that melts into the photo. */
+.hero-top-blur {
+  -webkit-backdrop-filter: blur(14px) saturate(130%);
+  backdrop-filter: blur(14px) saturate(130%);
+  -webkit-mask-image: linear-gradient(180deg, #000 0%, #000 35%, transparent 100%);
+  mask-image: linear-gradient(180deg, #000 0%, #000 35%, transparent 100%);
+}
+/* Bottom of the photo blurs and fades into the page, under the overlapping cards. */
+.hero-fade {
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  -webkit-mask-image: linear-gradient(180deg, transparent 0%, #000 60%);
+  mask-image: linear-gradient(180deg, transparent 0%, #000 60%);
+  background: linear-gradient(180deg, transparent 0%, color-mix(in srgb, var(--page) 55%, transparent) 55%, var(--page) 100%);
+}
+.hero-card:hover { box-shadow: var(--glass-shadow), var(--cta-glow); }
+.btn-on-photo {
+  background: rgb(255 248 238 / 12%);
+  border: 1px solid rgb(255 236 210 / 30%);
+  color: #FFF8EE;
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  transition: background-color .2s, transform .15s;
+}
+.btn-on-photo:hover { background: rgb(255 248 238 / 20%); }
+.btn-on-photo:active { transform: scale(.99); }
 
 .field {
   width: 100%;

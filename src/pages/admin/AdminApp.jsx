@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useState } from 'react'
 import { NavLink, Navigate, Route, Routes } from 'react-router-dom'
-import { CalendarDays, ExternalLink, LogOut, MessageSquareHeart, Scissors, Send, Settings, Users } from 'lucide-react'
-import { api, isDemo } from '../../lib/api.js'
+import { CalendarDays, ExternalLink, LogOut, MessageSquareHeart, Scissors, Settings, Users } from 'lucide-react'
+import { api } from '../../lib/api.js'
 import { useI18n } from '../../lib/i18n.jsx'
-import { ErrorNote, Field, LangSwitch, Logo, Shimmer, TelegramLoginButton, ThemeToggle } from '../../components/ui.jsx'
+import { ErrorNote, Field, LangSwitch, Logo, Shimmer, TelegramLoginButton, ThemeSwitch } from '../../components/ui.jsx'
 import { hasTelegram } from '../../lib/telegram.js'
 import CalendarView from './CalendarView.jsx'
 import Services from './Services.jsx'
@@ -77,32 +77,21 @@ function Login({ onSession }) {
 
   return (
     <Centered>
-      <div className="mb-6 flex items-center justify-between"><Logo /><div className="flex gap-2"><LangSwitch /><ThemeToggle /></div></div>
+      <div className="mb-6 flex items-center justify-between"><Logo /><div className="flex gap-2"><LangSwitch /><ThemeSwitch /></div></div>
       <form onSubmit={submit} className="glass rise space-y-3 rounded-[28px] p-6">
         <h1 className="serif c-title text-[32px] font-semibold">{t('barberLogin')}</h1>
-        {isDemo ? (
-          <>
-            <TelegramLoginButton onAuth={onTelegram} demoFallback={
-              <button type="button" disabled={busy} onClick={() => onTelegram({ id: 1 })} className="btn-ghost flex w-full items-center justify-center gap-2 rounded-full py-3 font-semibold"><Send size={16} className="c-gold" />{t('loginWithTelegram')} (demo)</button>
-            } />
-            <button type="submit" disabled={busy} className="btn-primary w-full rounded-full py-3 font-semibold">{t('signIn')} (demo)</button>
-          </>
-        ) : (
-          <>
-            {hasTelegram() && <>
-              <TelegramLoginButton onAuth={onTelegram} />
-              <div className="c-muted flex items-center gap-3 text-[12px]"><span className="b-line h-px flex-1 border-t" />{t('orEmail')}<span className="b-line h-px flex-1 border-t" /></div>
-            </>}
-            <Field label={t('email')}><input className="field" type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" required /></Field>
-            <Field label={t('password')}><input className="field" type="password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete={mode === 'in' ? 'current-password' : 'new-password'} minLength={6} required /></Field>
-            {error && <ErrorNote error={error} />}
-            {notice && <p className="pill-ok rounded-2xl px-4 py-3 text-[14px]">{notice}</p>}
-            <button type="submit" disabled={busy} className="btn-primary w-full rounded-full py-3 font-semibold">{mode === 'in' ? t('signIn') : t('signUp')}</button>
-            <button type="button" onClick={() => setMode(mode === 'in' ? 'up' : 'in')} className="c-gold w-full text-center text-[14px] font-medium hover:underline">
-              {mode === 'in' ? t('noAccount') : t('haveAccount')}
-            </button>
-          </>
-        )}
+        {hasTelegram() && <>
+          <TelegramLoginButton onAuth={onTelegram} />
+          <div className="c-muted flex items-center gap-3 text-[12px]"><span className="b-line h-px flex-1 border-t" />{t('orEmail')}<span className="b-line h-px flex-1 border-t" /></div>
+        </>}
+        <Field label={t('email')}><input className="field" type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" required /></Field>
+        <Field label={t('password')}><input className="field" type="password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete={mode === 'in' ? 'current-password' : 'new-password'} minLength={6} required /></Field>
+        {error && <ErrorNote error={error} />}
+        {notice && <p className="pill-ok rounded-2xl px-4 py-3 text-[14px]">{notice}</p>}
+        <button type="submit" disabled={busy} className="btn-primary w-full rounded-full py-3 font-semibold">{mode === 'in' ? t('signIn') : t('signUp')}</button>
+        <button type="button" onClick={() => setMode(mode === 'in' ? 'up' : 'in')} className="c-gold w-full text-center text-[14px] font-medium hover:underline">
+          {mode === 'in' ? t('noAccount') : t('haveAccount')}
+        </button>
       </form>
     </Centered>
   )
@@ -172,7 +161,7 @@ function Layout({ shop, setShop, onSignOut }) {
             <div className="flex items-center justify-between gap-2 px-1">
               <LangSwitch />
               <div className="flex gap-1.5">
-                <ThemeToggle />
+                <ThemeSwitch />
                 <button type="button" onClick={onSignOut} className="btn-ghost grid h-9 w-9 place-items-center rounded-full" aria-label={t('signOut')} title={t('signOut')}><LogOut size={16} /></button>
               </div>
             </div>
@@ -192,10 +181,6 @@ function Layout({ shop, setShop, onSignOut }) {
       </header>
 
       <main className="min-w-0 flex-1 px-4 pb-28 pt-4 md:px-8 md:pb-10 md:pt-8">
-        {isDemo && <div className="pill-warn mb-4 flex flex-wrap items-center justify-between gap-2 rounded-2xl px-4 py-2.5 text-[13px]">
-          <span>{t('demoBanner')}</span>
-          <button type="button" className="font-semibold underline underline-offset-2" onClick={() => api.resetDemo().then(() => window.location.reload())}>{t('resetDemo')}</button>
-        </div>}
         <Routes>
           <Route index element={<CalendarView shop={shop} />} />
           <Route path="services" element={<Services shop={shop} />} />

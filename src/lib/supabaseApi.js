@@ -48,8 +48,6 @@ export function createSupabaseApi(url, key) {
     async joinWaitlist({ shopId, date, name, phone, lang = 'ru' }) {
       unwrap(await sb.rpc('join_waitlist', { p_shop: shopId, p_date: date, p_name: name, p_phone: phone, p_lang: lang }))
     },
-    // Linking happens through the bot deep link; nothing to do here.
-    async linkBookingTelegram() {},
     async getBooking(token) { return unwrap(await sb.rpc('get_booking', { p_token: token })) },
     async cancelBooking(token) { unwrap(await sb.rpc('cancel_booking', { p_token: token })) },
     async submitReview(token, { rating, comment }) { unwrap(await sb.rpc('submit_review', { p_token: token, p_rating: rating, p_comment: comment || '' })) },

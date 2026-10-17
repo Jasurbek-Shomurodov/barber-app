@@ -26,9 +26,9 @@ clients must read today's calendar at a glance. It must look intentional in
 both themes and in O'z, Ru and En.
 
 ## 1. Gather the visuals
-- Start `barber-dev` (`.claude/launch.json`), built-in browser. Demo mode
-  needs no sign-in: `/demo` (public), `/b/<token>` (after a booking),
-  `/admin/*`.
+- Start `barber-dev` (`.claude/launch.json`), built-in browser. Public pages
+  need no sign-in: `/<slug>`, `/b/<token>` (after a booking). `/admin/*`
+  needs the user to sign in; never enter credentials yourself.
 - Capture each target at **375, 768, 1280 and 1920 px**, light and dark
   (`resize_window` `colorScheme`), in **Ru** (longest strings) plus O'z.
   Client screens matter most at 375 px, the calendar at 768 and 1280.
@@ -36,10 +36,10 @@ both themes and in O'z, Ru and En.
   768×1024, 1024×768, 1280, 1440, 1920.
 - Two data states: *busy day* (many bookings, long client list, reviews) and
   *empty* (new shop, day with no bookings, no services, no reviews). Reach
-  empty via a far date or by archiving in demo mode after "Reset demo".
+  empty via a far date or a fresh shop; never delete real data.
 - Overlays are part of the screen: `Sheet` (booking, new booking, service,
-  client), the waitlist form, Telegram cards, `LangSwitch`, `ThemeToggle`,
-  the phone sticky bar on `/demo` and bottom tabs in `/admin`.
+  client), the waitlist form, Telegram cards, `LangSwitch`, `ThemeSwitch`,
+  the phone sticky bar on `/<slug>` and bottom tabs in `/admin`.
 - Read the screen source and `ui.jsx`, `index.css` tokens, `tailwind.config.js`.
 
 ## 2. Checklist
