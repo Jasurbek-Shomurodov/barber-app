@@ -1,5 +1,5 @@
 // Bot webhook. Register once:
-//   curl "https://api.telegram.org/bot$TOKEN/setWebhook?url=https://barber.vercel.app/api/telegram/webhook&secret_token=$TELEGRAM_WEBHOOK_SECRET"
+//   curl "https://api.telegram.org/bot$TOKEN/setWebhook?url=https://barberuz.vercel.app/api/telegram/webhook&secret_token=$TELEGRAM_WEBHOOK_SECRET"
 // Handles deep links:
 //   /start b_<booking token>   client links this chat to a booking (confirmations + reminders)
 //   /start s_<shop link code>  barber links this chat to their shop (new bookings, cancellations, daily summary)

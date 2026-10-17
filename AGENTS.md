@@ -1,6 +1,6 @@
 # Barber Agent Guide
 
-Barber (barber.vercel.app) is a Vite/React 18 booking site for barbers on Supabase: a public
+Barber (barberuz.vercel.app) is a Vite/React 18 booking site for barbers on Supabase: a public
 booking page per shop, a barber dashboard (calendar, services, clients, feedback, settings)
 and Telegram login, notifications and reminders. One deployment serves many shops.
 

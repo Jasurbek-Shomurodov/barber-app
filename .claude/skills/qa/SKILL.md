@@ -1,6 +1,6 @@
 ---
 name: qa
-description: Thorough functional QA of a feature, page, request or recent change in Barber (barber.vercel.app). Tests the real app end to end in the browser (booking flow, slots, cancellation policy, waitlist, feedback, dashboard calendar/services/clients/settings, Telegram linking, locales, themes, phone sizes) and reports pass/fail with evidence. Arguments: empty or "full", "diff", a feature, page or request text, a commit, a PR, "smoke", "retest", or an area code (BOOK, SLOT, CANCEL, FEED, CAL, SVC, CLI, SET, TG, I18N, UI). Use when the user types /qa.
+description: Thorough functional QA of a feature, page, request or recent change in Barber (barberuz.vercel.app). Tests the real app end to end in the browser (booking flow, slots, cancellation policy, waitlist, feedback, dashboard calendar/services/clients/settings, Telegram linking, locales, themes, phone sizes) and reports pass/fail with evidence. Arguments: empty or "full", "diff", a feature, page or request text, a commit, a PR, "smoke", "retest", or an area code (BOOK, SLOT, CANCEL, FEED, CAL, SVC, CLI, SET, TG, I18N, UI). Use when the user types /qa.
 argument-hint: "[empty = full | diff | feature, page or request text | commit | PR | smoke | retest | area code (BOOK, SLOT, CANCEL, FEED, CAL, SVC, CLI, SET, TG, I18N, UI)] [fix]"
 disable-model-invocation: true
 ---

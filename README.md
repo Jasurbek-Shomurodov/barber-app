@@ -1,6 +1,6 @@
 # Barber — online booking for barbers
 
-Live: `https://barber.vercel.app`. Clients open the barber's link (`/your-shop`), pick
+Live: `https://barberuz.vercel.app`. Clients open the barber's link (`/your-shop`), pick
 services, a day and a free time, and book in seconds — with Telegram confirmations and
 reminders. The barber manages everything at `/admin`: calendar, services, clients and
 stats, feedback and settings. One deployment serves many barbers.
@@ -34,12 +34,13 @@ browser's localStorage, `/admin` signs straight in, Telegram actions are simulat
 
 ## Deploy (Vercel + Supabase + Telegram)
 
-1. Supabase: create a project, run `migrations/001_init.sql` then `002_telegram_and_policies.sql`.
+1. Supabase: create a project, run every file in `migrations/` in order (`001`, `002`, `003`, …).
+   The site address for Telegram links lives in `app_settings.base_url`.
    Store the bot token: `select vault.create_secret('<token>', 'telegram_bot_token');`
    (pg_cron then sends notifications every minute via pg_net).
-2. Telegram: create a bot with @BotFather, `/setdomain barber.vercel.app` for the Login
+2. Telegram: create a bot with @BotFather, `/setdomain barberuz.vercel.app` for the Login
    Widget, and register the webhook:
-   `curl "https://api.telegram.org/bot$TOKEN/setWebhook?url=https://barber.vercel.app/api/telegram/webhook&secret_token=$SECRET"`.
+   `curl "https://api.telegram.org/bot$TOKEN/setWebhook?url=https://barberuz.vercel.app/api/telegram/webhook&secret_token=$SECRET"`.
 3. Vercel: import the repo, set the env vars from `.env.example`
    (`VITE_*` for the browser; `SUPABASE_SERVICE_ROLE_KEY`, `TELEGRAM_BOT_TOKEN`,
    `TELEGRAM_WEBHOOK_SECRET`, `CRON_SECRET` server-only). `vercel.json` rewrites the SPA

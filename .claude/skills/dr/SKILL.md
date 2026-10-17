@@ -1,6 +1,6 @@
 ---
 name: dr
-description: Thorough design and UX review of a page, component or screenshot in Barber (barber.vercel.app). Checks the cream/copper "lux" kit shared with zarkebab.uz, Cormorant Garamond + Onest typography, glass cards, spacing, dark/light themes, touch ergonomics on phones, loading/empty/error states, responsiveness, three locales and consistency between the public booking page and the dashboard. Arguments: empty or "full", "diff", a page or route, a component, a screenshot, or an area code (LAY, COL, TYPE, TOUCH, STATE, RULE, REUSE, RESP, PUB). Use when the user types /dr.
+description: Thorough design and UX review of a page, component or screenshot in Barber (barberuz.vercel.app). Checks the cream/copper "lux" kit shared with zarkebab.uz, Cormorant Garamond + Onest typography, glass cards, spacing, dark/light themes, touch ergonomics on phones, loading/empty/error states, responsiveness, three locales and consistency between the public booking page and the dashboard. Arguments: empty or "full", "diff", a page or route, a component, a screenshot, or an area code (LAY, COL, TYPE, TOUCH, STATE, RULE, REUSE, RESP, PUB). Use when the user types /dr.
 argument-hint: "[empty = full | diff | page/route | component | screenshot | area code (LAY, COL, TYPE, TOUCH, STATE, RULE, REUSE, RESP, PUB)] [fix]"
 disable-model-invocation: true
 ---

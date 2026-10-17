@@ -1,6 +1,6 @@
 ---
 name: cr
-description: Deep code review of the uncommitted diff, a commit range, a branch or a PR in Barber (barber.vercel.app). Checks booking correctness and slot math, RLS and token-based client access, snapshots, Telegram security (HMAC, secrets, webhook auth), the notification queue, migrations, translations, loading states, network, performance and running cost. Arguments: empty or "full", "diff", a commit, "A..B", a branch, a PR number, a path, or an area code (SLOT, PROT, SNAP, TG, NOTIF, MIG, I18N, UI, NET, PERF, COST, DRY, TEST). Use when the user types /cr.
+description: Deep code review of the uncommitted diff, a commit range, a branch or a PR in Barber (barberuz.vercel.app). Checks booking correctness and slot math, RLS and token-based client access, snapshots, Telegram security (HMAC, secrets, webhook auth), the notification queue, migrations, translations, loading states, network, performance and running cost. Arguments: empty or "full", "diff", a commit, "A..B", a branch, a PR number, a path, or an area code (SLOT, PROT, SNAP, TG, NOTIF, MIG, I18N, UI, NET, PERF, COST, DRY, TEST). Use when the user types /cr.
 argument-hint: "[empty = full | diff | commit | A..B | branch | PR number | path | area code (SLOT, PROT, SNAP, TG, NOTIF, MIG, I18N, UI, NET, PERF, COST, DRY, TEST)] [fix]"
 disable-model-invocation: true
 ---

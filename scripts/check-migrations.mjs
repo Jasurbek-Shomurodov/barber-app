@@ -68,4 +68,7 @@ await q(`update shops set closed_dates = array[$2::date] where id = $1`, [shop.i
 await fails(`select create_booking($1, $2::uuid[], $3::date, 1100, 'Closed', '90 444 44 44')`, [shop.id, [svc[0]], day], 'outside_hours')
 await fails(`select create_booking($1, $2::uuid[], ((now() at time zone 'Asia/Tashkent')::date - 1), 700, 'Bek', '90 111 22 33')`, [shop.id, [svc[1]]], 'date_out_of_range')
 assert.ok((await q(`select count(*)::int n from claim_notifications(10)`))[0].n >= 1)
+const [{ text: link }] = await q(`select text from notifications where kind = 'confirmed' or kind = 'reminder' limit 1`)
+assert.match(link, /https:\/\/barberuz\.vercel\.app\/b\//, 'links use app_settings.base_url')
+assert.ok(!(await q(`select text from notifications`)).some((r) => r.text.includes('barber.vercel.app/')), 'no hard-coded old domain')
 console.log('migrations ok')
