@@ -14,6 +14,7 @@ Booking without an account still works.
 | Area | Where |
 | --- | --- |
 | Routes | `src/App.jsx`: `/` landing, `/:slug` booking, `/b/:token` client's booking + feedback, `/admin/*` dashboard, `/owner` admin panel, `/owner/:shopId` read-only shop view with notes and log, `/me` client's bookings |
+| Public shop data | `shops_public` view (`migrations/007_shops_public.sql`): what the booking page reads; the `shops` table itself is owner and admin only |
 | Roles | `migrations/005_roles.sql` (`platform_admins`, `shops.status`, `shops_guard`, `admin_*` RPCs, `my_bookings`), `migrations/006_owner_tools.sql` (`shop_events` log, `admin_add_note`, `admin_shop_overview`), `src/pages/owner/`, `src/pages/MyBookings.jsx` |
 | Approval checklist | `src/lib/onboarding.js`: the same five items ticked by the admin on `/owner` and shown to a pending barber on `/admin` (`src/components/Checklist.jsx`) |
 | Slot and duration math | `src/lib/slots.js` (buffer, closed dates, lead time) |
@@ -42,6 +43,7 @@ npm run build
 - **The database decides availability.** Duration and price come from `services` inside `create_booking`; the exclusion constraint plus the buffer check reject overlaps; working hours, closed dates, lead time, booking window, blocked clients and cancellation hours and shop approval are enforced in SQL. The browser mirrors the rules in `slots.js` only to show free times.
 - **Booking history is a snapshot.** `service_names`, `total_price`, `duration_min` are copied at booking time; renaming or repricing a service never rewrites them. Services are archived, never deleted.
 - **Notifications are a queue, not a side effect in the UI.** Triggers on `bookings` enqueue `notifications`; `dispatch_notifications()` (pg_net + pg_cron) or `api/telegram/dispatch.js` sends them. Cancelling a booking cancels its pending reminders. New kinds get a template in `notification_text()` for `uz`, `ru`, `en`.
+- **The browser never selects from `shops`** for public pages: `getShopBySlug` reads the `shops_public` view, which has no `owner_id`, `owner_chat_id` or `telegram_link_code`. Anon has no select on `shops`; policies anon reaches (`services`, `reviews`) go through `shop_approved()` / `shop_owned()` instead of subqueries on `shops`. The barber reads their own row only.
 - **Secrets live server-side.** `TELEGRAM_BOT_TOKEN`, `SUPABASE_SERVICE_ROLE_KEY` only in `api/` and Vault. Telegram login payloads are verified by HMAC (`verifyLoginWidget` or `verify_telegram_login` in SQL) before being trusted. Bot sign-in hands a session only to the browser holding the request's secret (only its sha256 is stored), once, within `BOT_LOGIN_TTL_MS`; `telegram_login_requests` has RLS and no policies. `api/` handlers check their secret before touching the admin client.
 - **Times are (date, start_min) in the shop's timezone.** Never store or compare browser-local instants; use `nowInZone`, `booking_starts_at`.
 - **Language changes are presentation only.** No refetch, reload or form reset; error codes are translated at render time (`err_<code>`); every key exists in all three dictionaries (`tests/i18n.test.js`).

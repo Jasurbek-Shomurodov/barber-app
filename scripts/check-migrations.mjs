@@ -1,7 +1,7 @@
 // Applies every migration to an in-memory Postgres (PGlite) and exercises the public RPCs:
 // double-booking, buffer, cancellation policy, blocked clients, closed dates, the notification
 // queue, the waitlist, roles (admin approval, client accounts, no entries in the past) and the
-// owner tools (audit log, notes, read-only overview). Run: npm run sql:check
+// owner tools (audit log, notes, read-only overview) and the public shops view. Run: npm run sql:check
 import fs from 'node:fs'
 import path from 'node:path'
 import assert from 'node:assert/strict'
@@ -31,6 +31,10 @@ insert into platform_admins values ('${admin}'); insert into telegram_accounts (
 set test.uid = '${uid}';`)
 const [shop] = await q(`select * from create_my_shop('my-shop', 'My Shop')`)
 assert.equal(shop.status, 'pending', 'a new barber waits for approval')
+assert.equal((await q(`select * from shops_public where slug = 'my-shop'`)).length, 1, 'the barber sees their own pending shop in the view')
+await db.exec(`set test.uid = ''`)
+assert.equal((await q(`select * from shops_public where slug = 'my-shop'`)).length, 0, 'a pending shop is invisible to clients')
+await db.exec(`set test.uid = '${uid}'`)
 await fails(`select create_my_shop('owner', 'Hidden')`, [], 'slug_taken')
 await fails(`update shops set status = 'approved' where id = $1`, [shop.id], 'not_allowed')
 await fails(`select * from admin_list_shops()`, [], 'not_allowed')
@@ -49,6 +53,13 @@ await fails(`select admin_add_note($1, '  ')`, [shop.id], 'note_required')
 await q(`select admin_add_note($1, 'Called, real shop')`, [shop.id])
 await q(`select admin_set_shop_status($1, 'approved')`, [shop.id])
 assert.equal((await q(`select * from admin_list_shops()`))[0].last_note, 'Called, real shop')
+await db.exec(`set test.uid = ''`)
+const [pub] = await q(`select * from shops_public where slug = 'my-shop'`)
+assert.ok(pub && pub.hours && pub.slot_step, 'approved shops are public with their booking rules')
+for (const col of ['owner_id', 'owner_chat_id', 'telegram_link_code', 'reminder_hours', 'daily_summary_hour']) assert.equal(col in pub, false, `shops_public exposes ${col}`)
+assert.deepEqual(await q(`select grantee, privilege_type from information_schema.role_table_grants where table_name = 'shops' and grantee = 'anon' and privilege_type = 'SELECT'`), [], 'anon must not select from shops')
+assert.equal((await q(`select count(*)::int n from information_schema.role_table_grants where table_name = 'shops_public' and grantee in ('anon', 'authenticated') and privilege_type = 'SELECT'`))[0].n, 2)
+await db.exec(`set test.uid = '${admin}'`)
 const overview = (await q(`select admin_shop_overview($1) o`, [shop.id]))[0].o
 assert.equal(overview.shop.slug, 'my-shop'); assert.equal(overview.services.length, 2); assert.equal(overview.shop.telegram_linked, true)
 assert.deepEqual(overview.events.map((e) => [e.kind, e.from_status, e.to_status, e.by_admin]), [['status', 'pending', 'approved', true], ['note', null, null, true], ['created', null, 'pending', false]])

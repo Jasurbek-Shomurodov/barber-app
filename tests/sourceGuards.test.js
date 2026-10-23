@@ -72,6 +72,19 @@ test('api routes authenticate before using service credentials', () => {
   assert.ok(/\.eq\('status', 'confirmed'\)/.test(bot), 'a bot confirmation must be claimed once')
 })
 
+test('the browser reads public shop data only through shops_public', () => {
+  const api = read('src/lib/supabaseApi.js')
+  assert.match(api, /getShopBySlug[^\n]*from\('shops_public'\)/, 'the booking page must read shops_public, not shops')
+  const sql = fs.readdirSync(path.join(root, 'migrations')).map((f) => read(path.join('migrations', f))).join('\n')
+  const view = sql.slice(sql.lastIndexOf('create or replace view shops_public'), sql.indexOf(';', sql.lastIndexOf('create or replace view shops_public')))
+  assert.ok(!/owner_id,|owner_chat_id|telegram_link_code|reminder_hours/.test(view.split('from shops')[0]), 'shops_public exposes a secret column')
+  assert.match(sql, /revoke select on shops from anon/, 'anon must not read the shops table')
+  for (const f of srcFiles) {
+    const s = read(f)
+    assert.ok(!/from\('shops'\)\.select\(\)/.test(s), `${f} selects every shop column`)
+  }
+})
+
 test('telegram login requests are service-role only', () => {
   const sql = read('migrations/004_telegram_bot_login.sql')
   assert.match(sql, /telegram_login_requests enable row level security/)

@@ -42,7 +42,8 @@ export function createSupabaseApi(url, key) {
   return {
     mode: 'supabase',
 
-    async getShopBySlug(slug) { return unwrap(await sb.from('shops').select('*').eq('slug', slug).maybeSingle()) },
+    /** Public shop data for the booking page, from the shops_public view (no owner or Telegram columns). */
+    async getShopBySlug(slug) { return unwrap(await sb.from('shops_public').select('*').eq('slug', slug).maybeSingle()) },
     async listServices(shopId, { all = false } = {}) {
       let q = sb.from('services').select('*').eq('shop_id', shopId).eq('archived', false).order('sort').order('name')
       if (!all) q = q.eq('active', true)
