@@ -49,6 +49,14 @@ export function availableStarts({ date, hours, duration, busy = [], step = 15, n
   return out
 }
 
+/** The slot running now; the barber may still enter it (a walk-in), but nothing earlier. */
+export const currentSlotStart = (now, step = 15) => Math.floor(now.minute / step) * step
+
+/** Mirrors the bookings_not_in_past trigger: true when a calendar entry would start in the past. */
+export function isPastStart(date, start, now, step = 15) {
+  return date < now.date || (date === now.date && start < currentSlotStart(now, step))
+}
+
 /** Server-side style check used before saving a booking (mirrors the SQL RPC). */
 export function canBook(args) {
   return availableStarts({ ...args, step: 1 }).includes(args.start)

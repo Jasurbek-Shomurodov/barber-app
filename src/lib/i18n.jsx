@@ -100,6 +100,20 @@ const en = {
   feat1: 'Online booking', feat1d: 'A personal link for Instagram and Telegram. Only free times are shown — no double bookings.',
   feat2: 'Calendar', feat2d: 'Day and week views, walk-ins, breaks, done and no-show in one tap.',
   feat3: 'Clients & feedback', feat3d: 'How many clients you served, who returns, and what they say.',
+  accountType: 'Account type', asClient: 'Client', asBarber: 'Barber',
+  clientAuthHint: 'See all your bookings in one place. Booking without an account still works.',
+  barberAuthHint: 'Your calendar, services and clients.', barberSignupHint: 'Your booking page goes live once the site owner approves it.',
+  createShopReview: 'After you create it, the site owner reviews the page. Meanwhile you can add services and hours.',
+  nav_owner: 'Owner', ownerTitle: 'Barbers', ownerMyShop: 'My barbershop', ownerBarbers: 'Barbers', ownerPending: 'Awaiting approval',
+  ownerUpcoming: 'Upcoming', ownerEmpty: 'No barbers have signed up yet.', ownerEmptyFilter: 'Nothing in this list.',
+  ownerNotAllowed: 'This page is only for the site owner.', ownerJoined: 'Joined', goHome: 'Home',
+  approve: 'Approve', suspend: 'Suspend', reactivate: 'Reactivate',
+  shopStatus_pending: 'Awaiting approval', shopStatus_approved: 'Live', shopStatus_suspended: 'Suspended',
+  pendingBanner: 'Clients will see your booking page once the site owner approves it. Add your services and working hours in the meantime.',
+  suspendedBanner: 'Online booking is paused for your page. Contact the site owner.',
+  shopNotLiveNotice: 'Only you can see this page — clients cannot book until it is approved.',
+  myBookings: 'My bookings', myBookingsEmpty: "No bookings yet. Open your barber's link to book a visit.", pastVisits: 'Past', openBooking: 'Open',
+  signInToSave: 'to keep all your bookings in one place.', savedToAccount: 'This booking will be saved to My bookings.',
 }
 
 const ru = {
@@ -198,6 +212,20 @@ const ru = {
   feat1: 'Онлайн-запись', feat1d: 'Личная ссылка для Instagram и Telegram. Показывается только свободное время — без двойных записей.',
   feat2: 'Календарь', feat2d: 'День и неделя, клиенты без записи, перерывы, «готово» и «не пришёл» в одно касание.',
   feat3: 'Клиенты и отзывы', feat3d: 'Сколько клиентов обслужено, кто возвращается и что о вас пишут.',
+  accountType: 'Тип аккаунта', asClient: 'Клиент', asBarber: 'Мастер',
+  clientAuthHint: 'Все ваши записи в одном месте. Записаться можно и без аккаунта.',
+  barberAuthHint: 'Ваш календарь, услуги и клиенты.', barberSignupHint: 'Страница записи откроется после одобрения владельцем сайта.',
+  createShopReview: 'После создания владелец сайта проверит страницу. Пока можно добавить услуги и часы работы.',
+  nav_owner: 'Владелец', ownerTitle: 'Мастера', ownerMyShop: 'Мой барбершоп', ownerBarbers: 'Мастера', ownerPending: 'Ждут одобрения',
+  ownerUpcoming: 'Предстоящие', ownerEmpty: 'Пока ни один мастер не зарегистрировался.', ownerEmptyFilter: 'В этом списке пусто.',
+  ownerNotAllowed: 'Эта страница только для владельца сайта.', ownerJoined: 'Зарегистрирован', goHome: 'На главную',
+  approve: 'Одобрить', suspend: 'Приостановить', reactivate: 'Возобновить',
+  shopStatus_pending: 'Ждёт одобрения', shopStatus_approved: 'Открыт', shopStatus_suspended: 'Приостановлен',
+  pendingBanner: 'Клиенты увидят страницу записи после одобрения владельцем сайта. Пока добавьте услуги и часы работы.',
+  suspendedBanner: 'Онлайн-запись на вашу страницу приостановлена. Свяжитесь с владельцем сайта.',
+  shopNotLiveNotice: 'Эту страницу видите только вы — клиенты смогут записаться после одобрения.',
+  myBookings: 'Мои записи', myBookingsEmpty: 'Пока нет записей. Откройте ссылку вашего мастера, чтобы записаться.', pastVisits: 'Прошедшие', openBooking: 'Открыть',
+  signInToSave: 'чтобы все записи были в одном месте.', savedToAccount: 'Запись сохранится в «Мои записи».',
 }
 
 const uz = {
@@ -296,6 +324,20 @@ const uz = {
   feat1: 'Onlayn yozilish', feat1d: "Instagram va Telegram uchun shaxsiy havola. Faqat bo'sh vaqtlar ko'rsatiladi — ikki marta band qilish yo'q.",
   feat2: 'Kalendar', feat2d: "Kun va hafta ko'rinishi, yozilmasdan kelganlar, tanaffuslar, «bajarildi» va «kelmadi» bir bosishda.",
   feat3: 'Mijozlar va fikrlar', feat3d: "Nechta mijozga xizmat qildingiz, kim qaytadi va nima deyishadi.",
+  accountType: 'Hisob turi', asClient: 'Mijoz', asBarber: 'Usta',
+  clientAuthHint: "Barcha yozuvlaringiz bir joyda. Hisobsiz ham yozilish mumkin.",
+  barberAuthHint: 'Kalendar, xizmatlar va mijozlaringiz.', barberSignupHint: "Yozilish sahifangiz sayt egasi tasdiqlagach ochiladi.",
+  createShopReview: "Yaratganingizdan so'ng sayt egasi sahifani ko'rib chiqadi. Bu orada xizmatlar va ish vaqtini qo'shishingiz mumkin.",
+  nav_owner: 'Egasi', ownerTitle: 'Ustalar', ownerMyShop: 'Mening sartaroshxonam', ownerBarbers: 'Ustalar', ownerPending: 'Tasdiq kutmoqda',
+  ownerUpcoming: 'Kelgusi', ownerEmpty: "Hali birorta usta ro'yxatdan o'tmagan.", ownerEmptyFilter: "Bu ro'yxat bo'sh.",
+  ownerNotAllowed: 'Bu sahifa faqat sayt egasi uchun.', ownerJoined: "Ro'yxatdan o'tgan", goHome: 'Bosh sahifa',
+  approve: 'Tasdiqlash', suspend: "To'xtatish", reactivate: 'Qayta yoqish',
+  shopStatus_pending: 'Tasdiq kutmoqda', shopStatus_approved: 'Ochiq', shopStatus_suspended: "To'xtatilgan",
+  pendingBanner: "Sayt egasi tasdiqlagach mijozlar yozilish sahifangizni ko'radi. Bu orada xizmatlar va ish vaqtini qo'shing.",
+  suspendedBanner: "Sahifangizda onlayn yozilish to'xtatilgan. Sayt egasi bilan bog'laning.",
+  shopNotLiveNotice: "Bu sahifani faqat siz ko'rasiz — mijozlar tasdiqlangandan keyin yozila oladi.",
+  myBookings: 'Mening yozuvlarim', myBookingsEmpty: "Hali yozuvlar yo'q. Yozilish uchun ustangiz havolasini oching.", pastVisits: "O'tganlar", openBooking: 'Ochish',
+  signInToSave: 'barcha yozuvlaringiz bir joyda bo\'lishi uchun.', savedToAccount: "Bu yozuv «Mening yozuvlarim»ga saqlanadi.",
 }
 
 const DICTS = { en, ru, uz }

@@ -4,7 +4,7 @@ import { api } from '../../lib/api.js'
 import { useI18n } from '../../lib/i18n.jsx'
 import { useAsync } from '../../lib/useAsync.js'
 import { addDays, formatDuration, labelToMin, minToLabel, nowInZone, startOfWeek } from '../../lib/time.js'
-import { hoursFor, isBlocking, overlaps } from '../../lib/slots.js'
+import { currentSlotStart, hoursFor, isBlocking, isPastStart, overlaps } from '../../lib/slots.js'
 import { ErrorNote, Field, Sheet, Shimmer, StatusPill } from '../../components/ui.jsx'
 import Waitlist from './Waitlist.jsx'
 import { PageTitle } from './AdminApp.jsx'
@@ -43,6 +43,8 @@ export default function CalendarView({ shop }) {
     return [Math.floor(lo / 60) * 60, Math.min(1440, Math.ceil(hi / 60) * 60)]
   }, [shop.hours, rows])
 
+  // New entries never start in the past; browsing back keeps history readable.
+  const draftDate = anchor < now.date ? now.date : anchor
   const step = (dir) => setAnchor(addDays(anchor, dir * (view === 'day' ? 1 : 7)))
   const title = view === 'day' ? dayLong(anchor) : `${dayMonth(from)} – ${dayMonth(to)}`
   const live = (rows || []).filter(isBlocking)
@@ -57,10 +59,10 @@ export default function CalendarView({ shop }) {
   return (
     <div>
       <PageTitle title={t('nav_calendar')}>
-        <button type="button" onClick={() => setDraft({ date: anchor, start: null, blocked: true })} className="btn-ghost flex items-center gap-1.5 rounded-full px-4 py-2 text-[14px] font-medium">
+        <button type="button" onClick={() => setDraft({ date: draftDate, start: null, blocked: true })} className="btn-ghost flex items-center gap-1.5 rounded-full px-4 py-2 text-[14px] font-medium">
           <Lock size={15} />{t('blockTime')}
         </button>
-        <button type="button" onClick={() => setDraft({ date: anchor, start: null, blocked: false })} className="btn-primary flex items-center gap-1.5 rounded-full px-4 py-2 text-[14px] font-semibold">
+        <button type="button" onClick={() => setDraft({ date: draftDate, start: null, blocked: false })} className="btn-primary flex items-center gap-1.5 rounded-full px-4 py-2 text-[14px] font-semibold">
           <Plus size={16} />{t('newBooking')}
         </button>
       </PageTitle>
@@ -133,7 +135,7 @@ export default function CalendarView({ shop }) {
       )}
 
       <BookingSheet booking={open} shop={shop} onClose={() => setOpen(null)} onStatus={setStatus} />
-      {draft && <NewBookingSheet shop={shop} draft={draft} rows={rows || []} onClose={() => setDraft(null)} onSaved={() => { setDraft(null); q.reload() }} />}
+      {draft && <NewBookingSheet shop={shop} now={now} draft={draft} rows={rows || []} onClose={() => setDraft(null)} onSaved={() => { setDraft(null); q.reload() }} />}
     </div>
   )
 }
@@ -147,8 +149,9 @@ function DayColumn({ date, shop, rows, minStart, maxEnd, now, compact, onOpen, o
     if (e.target !== e.currentTarget) return
     const y = e.nativeEvent.offsetY
     const m = Math.floor((y / PX + minStart) / shop.slot_step) * shop.slot_step
-    onEmpty(m)
+    if (!isPastStart(date, m, now, shop.slot_step)) onEmpty(m)
   }
+  const pastUntil = date < now.date ? maxEnd : date === now.date ? Math.min(maxEnd, currentSlotStart(now, shop.slot_step)) : minStart
   return (
     <div className="b-line relative cursor-copy border-l" onClick={clickEmpty}>
       {/* Hour lines */}
@@ -167,6 +170,8 @@ function DayColumn({ date, shop, rows, minStart, maxEnd, now, compact, onOpen, o
           {hours.close < maxEnd && <div className="bg-page-2 pointer-events-none absolute inset-x-0 bottom-0 opacity-60" style={{ top: top(hours.close) }} />}
         </>
       )}
+      {/* Past: covers the column so clicks there do not start a new entry */}
+      {pastUntil > minStart && <div className="cal-past absolute inset-x-0 top-0" style={{ height: top(pastUntil) }} />}
       {/* Now line */}
       {date === now.date && now.minute >= minStart && now.minute <= maxEnd && (
         <div className="cal-now pointer-events-none absolute inset-x-0 z-10" style={{ top: top(now.minute) }}>
@@ -237,13 +242,16 @@ function BookingSheet({ booking: b, shop, onClose, onStatus }) {
   )
 }
 
-function NewBookingSheet({ shop, draft, rows, onClose, onSaved }) {
+function NewBookingSheet({ shop, now, draft, rows, onClose, onSaved }) {
   const { t, money } = useI18n()
   const servicesQ = useAsync(() => api.listServices(shop.id, { all: true }), [shop.id])
   const [blocked, setBlocked] = useState(draft.blocked)
   const [date, setDate] = useState(draft.date)
   const hours = hoursFor(shop.hours, date)
-  const [start, setStart] = useState(minToLabel(draft.start ?? (hours.off ? 600 : hours.open)))
+  const [start, setStart] = useState(() => {
+    const first = draft.start ?? (hours.off ? 600 : hours.open)
+    return minToLabel(draft.date === now.date ? Math.max(first, currentSlotStart(now, shop.slot_step)) : first)
+  })
   const [picked, setPicked] = useState([])
   const [customDuration, setCustomDuration] = useState(60)
   const [name, setName] = useState('')
@@ -256,11 +264,13 @@ function NewBookingSheet({ shop, draft, rows, onClose, onSaved }) {
   const chosen = services.filter((s) => picked.includes(s.id))
   const duration = blocked ? Number(customDuration) : chosen.reduce((a, s) => a + s.duration_min, 0)
   const startMin = labelToMin(start)
+  const past = isPastStart(date, startMin, now, shop.slot_step)
   const clash = rows.some((b) => b.date === date && isBlocking(b) && overlaps(startMin, startMin + duration, b.start_min, b.start_min + b.duration_min))
 
   async function save(e) {
     e.preventDefault()
     if (!duration) { setError('noServicesPicked'); return }
+    if (past) { setError('err_time_passed'); return }
     setBusy(true); setError(null)
     try {
       await api.addManualBooking(shop.id, { date, startMin, durationMin: duration, serviceIds: blocked ? [] : picked, name: blocked ? '' : name, phone: blocked ? '' : phone, note, blocked })
@@ -278,7 +288,7 @@ function NewBookingSheet({ shop, draft, rows, onClose, onSaved }) {
           ))}
         </div>
         <div className="grid grid-cols-2 gap-3">
-          <Field label={t('chooseDate')}><input type="date" className="field" value={date} onChange={(e) => setDate(e.target.value)} required /></Field>
+          <Field label={t('chooseDate')}><input type="date" className="field" min={now.date} value={date} onChange={(e) => setDate(e.target.value)} required /></Field>
           <Field label={t('startTime')}><input type="time" className="field" step={shop.slot_step * 60} value={start} onChange={(e) => setStart(e.target.value)} required /></Field>
         </div>
         {blocked ? (
@@ -308,9 +318,10 @@ function NewBookingSheet({ shop, draft, rows, onClose, onSaved }) {
             <Field label={t('note')}><textarea className="field" rows={2} value={note} onChange={(e) => setNote(e.target.value)} /></Field>
           </>
         )}
+        {past && <p className="pill-warn rounded-2xl px-4 py-2.5 text-[13px]">{t('err_time_passed')}</p>}
         {clash && duration > 0 && <p className="pill-warn rounded-2xl px-4 py-2.5 text-[13px]">{t('err_slot_taken')}</p>}
         {error && <ErrorNote error={error} />}
-        <button type="submit" disabled={busy || !duration} className="btn-primary w-full rounded-full py-3 text-[15px] font-semibold">{t('save')}</button>
+        <button type="submit" disabled={busy || !duration || past} className="btn-primary w-full rounded-full py-3 text-[15px] font-semibold">{t('save')}</button>
       </form>
     </Sheet>
   )

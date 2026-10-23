@@ -4,6 +4,7 @@ import { Check, Clock, Instagram, MapPin, Phone, Scissors, Send, Users } from 'l
 import { api } from '../lib/api.js'
 import { useI18n } from '../lib/i18n.jsx'
 import { useAsync } from '../lib/useAsync.js'
+import { useSession } from '../lib/useSession.js'
 import { addDays, formatDuration, minToLabel, nowInZone } from '../lib/time.js'
 import { availableStarts, isClosed, slotOptionsFor, totalDuration } from '../lib/slots.js'
 import { hasTelegram } from '../lib/telegram.js'
@@ -107,6 +108,17 @@ function ShopBody({ shop }) {
   const [error, setError] = useState(null)
   const timeRef = useRef(null)
   const detailsRef = useRef(null)
+  const session = useSession()
+
+  // Signed-in clients: fill in what their account already knows; typed values win.
+  useEffect(() => {
+    if (!session) return
+    api.getProfile().then((p) => {
+      if (!p) return
+      setName((v) => v.trim() || p.name)
+      setPhone((v) => (v.replace(/\D/g, '').length > 3 ? v : p.phone || v))
+    }).catch(() => {})
+  }, [session])
 
   const services = servicesQ.data || []
   const chosen = services.filter((s) => picked.includes(s.id))
@@ -189,6 +201,9 @@ function ShopBody({ shop }) {
   return (
     <main className="mx-auto grid max-w-6xl gap-5 px-4 py-5 lg:grid-cols-[1fr_380px] lg:py-8">
       <div className="min-w-0 space-y-5">
+        {shop.status && shop.status !== 'approved' && (
+          <p className="pill-warn rounded-2xl px-4 py-3 text-[14px]" role="status">{t('shopNotLiveNotice')}</p>
+        )}
         {/* Hero */}
         <section className="glass rise rounded-[28px] p-5 sm:p-7">
           <h1 className="serif c-title text-[38px] font-semibold leading-[1.05] sm:text-[48px]">{shop.name}</h1>
@@ -360,6 +375,12 @@ function ShopBody({ shop }) {
                 </div>
               )}
               {shop.cancel_hours > 0 && <p className="c-muted text-[12px]">{tf('policyNote', { h: shop.cancel_hours })}</p>}
+              {session === null && (
+                <p className="c-muted text-[12px]">
+                  <Link to="/?auth=in&as=client" state={{ from: `/${shop.slug}` }} className="c-gold font-medium hover:underline">{t('signIn')}</Link> — {t('signInToSave')}
+                </p>
+              )}
+              {session && <p className="c-muted text-[12px]">{t('savedToAccount')}</p>}
               {error && <ErrorNote error={error} />}
               <button type="submit" disabled={!ready || submitting} className="btn-primary hidden w-full rounded-full py-3.5 text-[16px] font-semibold lg:block">
                 {submitting ? t('booking') : t('confirmBooking')}

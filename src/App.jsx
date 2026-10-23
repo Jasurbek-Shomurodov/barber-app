@@ -3,6 +3,8 @@ import Landing from './pages/Landing.jsx'
 import ShopPage from './pages/ShopPage.jsx'
 import BookingPage from './pages/BookingPage.jsx'
 import AdminApp from './pages/admin/AdminApp.jsx'
+import OwnerApp from './pages/owner/OwnerApp.jsx'
+import MyBookings from './pages/MyBookings.jsx'
 import { isConfigured } from './lib/api.js'
 import { useI18n } from './lib/i18n.jsx'
 
@@ -16,6 +18,8 @@ export default function App() {
     <Routes>
       <Route path="/" element={<Landing />} />
       <Route path="/admin/*" element={<AdminApp />} />
+      <Route path="/owner" element={<OwnerApp />} />
+      <Route path="/me" element={<MyBookings />} />
       <Route path="/b/:token" element={<BookingPage />} />
       <Route path="/:slug" element={<ShopPage />} />
       <Route path="*" element={<Navigate to="/" replace />} />

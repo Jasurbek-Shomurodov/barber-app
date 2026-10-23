@@ -35,6 +35,18 @@ test('public RPCs never return client phones', () => {
   assert.ok(!/client_phone/.test(getBooking), 'get_booking exposes client_phone')
   const getBusy = sql.slice(sql.indexOf('create or replace function get_busy'), sql.indexOf('create or replace function get_busy') + 600)
   assert.ok(!/client_name|client_phone/.test(getBusy), 'get_busy exposes client data')
+  const mine = sql.slice(sql.lastIndexOf('create or replace function my_bookings'), sql.indexOf('$$;', sql.lastIndexOf('create or replace function my_bookings')))
+  assert.ok(mine && !/client_phone/.test(mine), 'my_bookings exposes client_phone')
+  assert.match(mine, /client_user_id = \(select auth\.uid\(\)\)/, 'my_bookings must stay scoped to the caller')
+})
+
+test('admin RPCs check the caller is a platform admin', () => {
+  const sql = read('migrations/005_roles.sql')
+  for (const fn of ['admin_list_shops', 'admin_set_shop_status']) {
+    const body = sql.slice(sql.indexOf(`create or replace function ${fn}`), sql.indexOf('end $$;', sql.indexOf(`create or replace function ${fn}`)))
+    assert.match(body, /if not is_platform_admin\(\) then raise exception 'not_allowed'/, `${fn} lacks the admin check`)
+  }
+  assert.ok(!/create policy[^;]*platform_admins/i.test(sql), 'platform_admins must not be readable by clients')
 })
 
 test('every migration is append-only: files are numbered and not renamed', () => {

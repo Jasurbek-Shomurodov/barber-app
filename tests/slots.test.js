@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { availableStarts, canBook, totalDuration } from '../src/lib/slots.js'
+import { availableStarts, canBook, totalDuration, currentSlotStart, isPastStart } from '../src/lib/slots.js'
 import { addDays, startOfWeek, weekday, minToLabel, labelToMin } from '../src/lib/time.js'
 
 const hours = [0, 1, 2, 3, 4, 5, 6].map((day) => ({ day, open: 600, close: 720, off: day === 0 }))
@@ -49,4 +49,13 @@ test('buffer keeps a gap around busy bookings and closed dates have no slots', (
   const starts = availableStarts({ date: MONDAY, hours, duration: 30, step: 15, busy, bufferMin: 15 })
   assert.deepEqual(starts.map(minToLabel), ['10:00', '10:15'])
   assert.deepEqual(availableStarts({ date: MONDAY, hours, duration: 30, closedDates: [MONDAY] }), [])
+})
+
+test('calendar entries never start in the past, but the running slot still counts', () => {
+  const now = { date: '2026-10-23', minute: 11 * 60 + 7 }
+  assert.equal(currentSlotStart(now, 15), 11 * 60)
+  assert.equal(isPastStart('2026-10-22', 15 * 60, now, 15), true, 'yesterday')
+  assert.equal(isPastStart('2026-10-23', 10 * 60 + 45, now, 15), true, 'earlier today')
+  assert.equal(isPastStart('2026-10-23', 11 * 60, now, 15), false, 'the slot running now (walk-in)')
+  assert.equal(isPastStart('2026-10-24', 9 * 60, now, 15), false, 'tomorrow')
 })

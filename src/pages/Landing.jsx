@@ -18,11 +18,11 @@ export default function Landing() {
   const navigate = useNavigate()
   const [, setParams] = useSearchParams()
   // Signed out: open the sign-in dialog over this page instead of leaving it.
-  const openAdmin = (to) => async (e) => {
+  const openAdmin = (to, as) => async (e) => {
     e.preventDefault()
     const session = await api.getSession().catch(() => null)
     if (session) navigate(to)
-    else setParams({ auth: 'in' }, { state: { from: to } })
+    else setParams({ auth: 'in', ...(as ? { as } : {}) }, { state: { from: to } })
   }
   const features = [
     [Link2, 'feat1', 'feat1d', '/admin/settings'],
@@ -54,6 +54,7 @@ export default function Landing() {
           <p className="mx-auto mt-5 max-w-xl text-[17px] text-[#F1E4D2]">{t('heroSub')}</p>
           <div className="mt-8 flex flex-wrap justify-center gap-3">
             <Link to="/admin" onClick={openAdmin('/admin')} className="btn-primary rounded-full px-7 py-3.5 text-[16px] font-semibold">{t('barberArea')}</Link>
+            <Link to="/me" onClick={openAdmin('/me', 'client')} className="switch-photo rounded-full px-7 py-3.5 text-[16px] font-semibold text-[#FFF8EE]">{t('myBookings')}</Link>
           </div>
         </div>
       </section>

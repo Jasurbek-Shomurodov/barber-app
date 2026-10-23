@@ -79,3 +79,13 @@ Severity if failed (`review-core` section 2): **S0** another client's data reada
 | NET-001 | S1 | Owner booking reads page past 1000 rows | Read `pagedBookings` | `.range(offset, offset + 999)` loop ordered by `id` |
 | NET-002 | S2 | Calendar refresh interval reasonable | `rg -n "setInterval" src` | 60 s or longer |
 | COST-001 | S2 | Cron work bounded | Read `dispatch_notifications`, `enqueue_daily_summaries` | `limit 50`; summary once per shop per day |
+
+## ROLE — admin, barbers, clients
+
+| ID | Sev | Case | Check | Expect |
+|---|---|---|---|---|
+| ROLE-001 | S0 | Barber cannot approve own shop | Read `shops_guard` (005) | Status change by a signed-in non-admin raises `not_allowed`; inserts forced to `pending` |
+| ROLE-002 | S0 | Admin RPCs gated | Read `admin_list_shops`, `admin_set_shop_status` | First statement `if not is_platform_admin() then raise exception 'not_allowed'` |
+| ROLE-003 | S0 | Unapproved shops not bookable | Read latest `create_booking`, `join_waitlist`, `shops_public_read` | `status = 'approved'` required; owner/admin may still read |
+| ROLE-004 | S0 | `my_bookings` scoped and phone-free | Read `my_bookings` | `client_user_id = auth.uid()`, no `client_phone` |
+| ROLE-005 | S1 | Nothing starts in the past | `bookings_not_in_past` trigger + `isPastStart` in `slots.js` | Same rule both sides: before the running slot → `time_passed` |

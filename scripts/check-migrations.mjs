@@ -1,6 +1,6 @@
 // Applies every migration to an in-memory Postgres (PGlite) and exercises the public RPCs:
 // double-booking, buffer, cancellation policy, blocked clients, closed dates, the notification
-// queue and the waitlist. Run: npm run sql:check
+// queue, the waitlist and roles (admin approval, client accounts, no entries in the past). Run: npm run sql:check
 import fs from 'node:fs'
 import path from 'node:path'
 import assert from 'node:assert/strict'
@@ -10,7 +10,7 @@ import { pgcrypto } from '@electric-sql/pglite/contrib/pgcrypto'
 
 const dir = path.resolve(new URL('.', import.meta.url).pathname, '../migrations')
 const db = new PGlite({ extensions: { btree_gist, pgcrypto } })
-await db.exec(`create schema auth; create table auth.users(id uuid primary key);
+await db.exec(`create schema auth; create table auth.users(id uuid primary key, raw_user_meta_data jsonb not null default '{}');
 create function auth.uid() returns uuid language sql as $$ select nullif(current_setting('test.uid', true), '')::uuid $$;
 create role anon; create role authenticated;`)
 for (const f of fs.readdirSync(dir).filter((x) => x.endsWith('.sql')).sort()) {
@@ -23,11 +23,30 @@ const fails = async (sql, params, code) => {
   assert.fail(`${code} expected, call succeeded`)
 }
 const uid = '11111111-1111-1111-1111-111111111111'
-await db.exec(`insert into auth.users values ('${uid}'); set test.uid = '${uid}';`)
+const admin = '22222222-2222-2222-2222-222222222222'
+const client = '33333333-3333-3333-3333-333333333333'
+await db.exec(`insert into auth.users (id, raw_user_meta_data) values ('${uid}', '{"full_name":"Barber Bek","phone":"+998901112233"}'), ('${admin}', '{}'), ('${client}', '{}');
+insert into platform_admins values ('${admin}'); insert into telegram_accounts (telegram_id, user_id) values (4242, '${admin}');
+set test.uid = '${uid}';`)
 const [shop] = await q(`select * from create_my_shop('my-shop', 'My Shop')`)
+assert.equal(shop.status, 'pending', 'a new barber waits for approval')
+await fails(`select create_my_shop('owner', 'Hidden')`, [], 'slug_taken')
+await fails(`update shops set status = 'approved' where id = $1`, [shop.id], 'not_allowed')
+await fails(`select * from admin_list_shops()`, [], 'not_allowed')
 await q(`update shops set hours = (select jsonb_agg(jsonb_build_object('day', d, 'open', 0, 'close', 1440, 'off', false)) from generate_series(0,6) d), lead_min = 0, buffer_min = 10, owner_chat_id = 777 where id = $1`, [shop.id])
 const svc = (await q(`insert into services (shop_id, name, duration_min, price) values ($1,'Cut',45,80000),($1,'Beard',25,50000) returning id`, [shop.id])).map((r) => r.id)
 const [{ d: day }] = await q(`select ((now() at time zone 'Asia/Tashkent')::date + 2)::text d`)
+const [{ d: yesterday }] = await q(`select ((now() at time zone 'Asia/Tashkent')::date - 1)::text d`)
+await fails(`insert into bookings (shop_id, date, start_min, duration_min, status, source) values ($1, $2::date, 600, 30, 'blocked', 'barber')`, [shop.id, yesterday], 'time_passed')
+await db.exec(`set test.uid = ''`)
+await fails(`select create_booking($1, $2::uuid[], $3::date, 600, 'Aziz', '+998 90 123 45 67')`, [shop.id, svc, day], 'shop_not_found')
+
+await db.exec(`set test.uid = '${admin}'`)
+const listed = await q(`select * from admin_list_shops()`)
+assert.deepEqual(listed.map((r) => [r.slug, r.status, r.owner_name, r.services]), [['my-shop', 'pending', 'Barber Bek', 2]])
+await q(`select admin_set_shop_status($1, 'approved')`, [shop.id])
+assert.deepEqual(await q(`select kind, chat_id::int c from notifications order by id`), [{ kind: 'new_barber', c: 4242 }, { kind: 'shop_approved', c: 777 }])
+await q(`delete from notifications`)
 await db.exec(`set test.uid = ''`) // anonymous client from here
 
 const [{ t: tok }] = await q(`select create_booking($1, $2::uuid[], $3::date, 600, 'Aziz', '+998 90 123 45 67', 'short', 'uz') t`, [shop.id, svc, day])
@@ -71,4 +90,13 @@ assert.ok((await q(`select count(*)::int n from claim_notifications(10)`))[0].n 
 const [{ text: link }] = await q(`select text from notifications where kind = 'confirmed' or kind = 'reminder' limit 1`)
 assert.match(link, /https:\/\/barberuz\.vercel\.app\/b\//, 'links use app_settings.base_url')
 assert.ok(!(await q(`select text from notifications`)).some((r) => r.text.includes('barber.vercel.app/')), 'no hard-coded old domain')
+
+await q(`update shops set closed_dates = '{}' where id = $1`, [shop.id])
+await db.exec(`set test.uid = '${client}'`)
+const [{ t: mine }] = await q(`select create_booking($1, $2::uuid[], $3::date, 1200, 'Signed In', '+998 90 555 55 55') t`, [shop.id, [svc[1]], day])
+const own = await q(`select * from my_bookings()`)
+assert.deepEqual(own.map((r) => [r.token, r.shop_slug]), [[mine, 'my-shop']], 'a client sees only their own bookings')
+assert.equal(own[0].client_phone, undefined, 'my_bookings never returns phones')
+await db.exec(`set test.uid = ''`)
+assert.equal((await q(`select count(*)::int n from my_bookings()`))[0].n, 0, 'anonymous callers see nothing')
 console.log('migrations ok')

@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
 import { NavLink, Navigate, Route, Routes, useLocation } from 'react-router-dom'
-import { CalendarDays, ExternalLink, LogOut, MessageSquareHeart, Scissors, Settings, Users } from 'lucide-react'
+import { CalendarDays, Clock, ExternalLink, LogOut, MessageSquareHeart, PauseCircle, Scissors, Settings, ShieldCheck, Users } from 'lucide-react'
 import { api } from '../../lib/api.js'
+import { useAsync } from '../../lib/useAsync.js'
 import { useI18n } from '../../lib/i18n.jsx'
 import { ErrorNote, Field, LangSwitch, Logo, Shimmer, ThemeSwitch } from '../../components/ui.jsx'
 import CalendarView from './CalendarView.jsx'
@@ -69,6 +70,7 @@ function CreateShop({ onCreated }) {
         <Field label={t('shopName')}>
           <input className="field" value={name} required onChange={(e) => { setName(e.target.value); if (!touched) setSlug(slugify(e.target.value)) }} />
         </Field>
+        <p className="c-muted text-[13px]">{t('createShopReview')}</p>
         <Field label={t('shopSlug')} hint={t('createShopHint')}>
           <div className="field flex items-center gap-1 !py-0"><span className="c-muted text-[14px]">{window.location.host}/</span>
             <input className="w-full bg-transparent py-[11px] outline-none" value={slug} required pattern="[a-z0-9][a-z0-9\-]{1,38}[a-z0-9]" onChange={(e) => { setTouched(true); setSlug(slugify(e.target.value)) }} />
@@ -92,6 +94,7 @@ const NAV = [
 function Layout({ shop, setShop, onSignOut }) {
   const { t } = useI18n()
   const link = `${window.location.origin}/${shop.slug}`
+  const adminQ = useAsync(() => api.isPlatformAdmin().catch(() => false), [])
   return (
     <div className="min-h-dvh md:flex">
       {/* Desktop sidebar */}
@@ -104,6 +107,11 @@ function Layout({ shop, setShop, onSignOut }) {
               <Icon size={18} className="c-gold" />{t(label)}
             </NavLink>
           ))}
+          {adminQ.data && (
+            <NavLink to="/owner" className="c-body flex items-center gap-3 rounded-2xl px-3.5 py-2.5 text-[15px] font-medium transition hover:bg-[var(--soft)]">
+              <ShieldCheck size={18} className="c-gold" />{t('nav_owner')}
+            </NavLink>
+          )}
           <div className="mt-auto space-y-2">
             <a href={link} target="_blank" rel="noreferrer" className="soft flex items-center justify-between gap-2 rounded-2xl px-3.5 py-2.5 text-[13px]">
               <span className="min-w-0"><span className="c-muted block text-[11px]">{t('publicPage')}</span><span className="c-title block truncate">/{shop.slug}</span></span>
@@ -125,6 +133,7 @@ function Layout({ shop, setShop, onSignOut }) {
         <div className="flex h-14 items-center justify-between gap-2 px-4">
           <div className="flex min-w-0 items-center gap-2"><Logo size={28} /><span className="serif c-title truncate text-[20px] font-semibold">{shop.name}</span></div>
           <div className="flex items-center gap-1.5">
+            {adminQ.data && <NavLink to="/owner" className="btn-ghost grid h-9 w-9 place-items-center rounded-full" aria-label={t('nav_owner')}><ShieldCheck size={16} /></NavLink>}
             <a href={link} target="_blank" rel="noreferrer" className="btn-ghost grid h-9 w-9 place-items-center rounded-full" aria-label={t('publicPage')}><ExternalLink size={16} /></a>
             <LangSwitch />
           </div>
@@ -132,6 +141,7 @@ function Layout({ shop, setShop, onSignOut }) {
       </header>
 
       <main className="min-w-0 flex-1 px-4 pb-28 pt-4 md:px-8 md:pb-10 md:pt-8">
+        <StatusBanner status={shop.status} />
         <Routes>
           <Route index element={<CalendarView shop={shop} />} />
           <Route path="services" element={<Services shop={shop} />} />
@@ -151,6 +161,19 @@ function Layout({ shop, setShop, onSignOut }) {
           </NavLink>
         ))}
       </nav>
+    </div>
+  )
+}
+
+/** Until the platform admin approves the shop, clients cannot see or book it. */
+function StatusBanner({ status }) {
+  const { t } = useI18n()
+  if (status !== 'pending' && status !== 'suspended') return null
+  const Icon = status === 'pending' ? Clock : PauseCircle
+  return (
+    <div className={`${status === 'pending' ? 'pill-warn' : 'pill-bad'} mb-5 flex items-start gap-3 rounded-2xl px-4 py-3 text-[14px]`} role="status">
+      <Icon size={18} className="mt-0.5 shrink-0" />
+      <div><div className="font-semibold">{t(`shopStatus_${status}`)}</div><div>{t(status === 'pending' ? 'pendingBanner' : 'suspendedBanner')}</div></div>
     </div>
   )
 }

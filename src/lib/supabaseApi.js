@@ -6,7 +6,7 @@ import { phoneLoginEmail } from './phoneLogin.js'
 const PAGE = 1000
 
 function fail(error) {
-  const known = /(client_blocked|too_late_to_cancel|slot_taken|name_required|phone_required|service_unavailable|date_out_of_range|time_passed|outside_hours|cannot_cancel|cannot_review|too_early|already_reviewed|booking_not_found|shop_not_found|not_signed_in)/.exec(error?.message || '')
+  const known = /(client_blocked|too_late_to_cancel|slot_taken|name_required|phone_required|service_unavailable|date_out_of_range|time_passed|outside_hours|cannot_cancel|cannot_review|too_early|already_reviewed|booking_not_found|shop_not_found|not_signed_in|not_allowed|slug_taken)/.exec(error?.message || '')
   const e = new Error(known ? known[1] : error?.message || 'unknown_error')
   e.code = known ? known[1] : error?.code === '23505' ? 'slug_taken' : error?.code === '23P01' ? 'slot_taken' : 'unknown_error'
   throw e
@@ -69,6 +69,18 @@ export function createSupabaseApi(url, key) {
     async getPublicStats(shopId) { return unwrap(await sb.rpc('get_public_stats', { p_shop: shopId })) },
 
     async getSession() { return unwrap(await sb.auth.getSession()).session },
+    /** Name and phone the account was created with, to prefill the booking form. */
+    async getProfile() {
+      const user = unwrap(await sb.auth.getSession()).session?.user
+      if (!user) return null
+      const meta = user.user_metadata || {}
+      return { name: meta.full_name || meta.name || '', phone: meta.phone || '' }
+    },
+    async isPlatformAdmin() { return Boolean(unwrap(await sb.rpc('is_platform_admin'))) },
+    async adminListShops() { return unwrap(await sb.rpc('admin_list_shops')) },
+    async adminSetShopStatus(shopId, status) { unwrap(await sb.rpc('admin_set_shop_status', { p_shop: shopId, p_status: status })) },
+    /** The signed-in client's own bookings across shops (no phones; tokens open /b/:token). */
+    async myBookings() { return unwrap(await sb.rpc('my_bookings')) },
     onAuthChange(cb) {
       const { data } = sb.auth.onAuthStateChange((_e, session) => cb(session))
       return () => data.subscription.unsubscribe()

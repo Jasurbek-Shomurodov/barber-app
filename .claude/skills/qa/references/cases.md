@@ -65,3 +65,13 @@ Every write goes to the real Supabase project and needs the user's "yes" in chat
 | UI-001 | S1 | Shimmers and errors | Throttle offline, reload `/<slug>` | Shimmers then `ErrorNote` with retry; no spinner |
 | UI-002 | S1 | Phone layout | 375 px, all pages | No horizontal scroll; bottom bars never cover inputs |
 | UI-003 | S2 | Dark theme | Toggle | Every card readable; copper buttons visible |
+
+## ROLE — admin, barbers, clients
+
+| ID | Sev | Case | Steps | Expect |
+|---|---|---|---|---|
+| ROLE-001 | S0 | New barber waits for approval | Sign up as Barber, create shop, open `/<slug>` signed out | Shop not found; dashboard shows the pending banner |
+| ROLE-002 | S0 | Owner approves | `/owner` as admin → Approve | Status Live; `/<slug>` bookable; barber gets Telegram note if linked |
+| ROLE-003 | S1 | Non-admin at `/owner` | Sign in as a barber, open `/owner` | "Only for the site owner", no data |
+| ROLE-004 | S1 | Client account | Sign in as Client, book on `/<slug>` | Name/phone prefilled; booking listed in `/me` with Open link |
+| ROLE-005 | S0 | No entries in the past | Calendar: click yesterday / earlier today; New booking with a past time | Past area shaded, click does nothing; form shows "already passed", Save disabled |

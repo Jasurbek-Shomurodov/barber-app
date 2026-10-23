@@ -239,6 +239,8 @@ select.field { appearance: none; background-image: linear-gradient(45deg, transp
 .cal-block-no_show { background: var(--bad-bg); border-left: 3px solid var(--bad); }
 .cal-block-blocked { background: repeating-linear-gradient(135deg, var(--soft) 0 8px, transparent 8px 16px); border-left: 3px solid var(--muted); }
 .cal-now { background: var(--bad); height: 2px; }
+/* Time that has passed: still readable, but nothing new can be put there. */
+.cal-past { background: color-mix(in srgb, var(--page-2) 55%, transparent); cursor: not-allowed; }
 
 /* Page transitions. */
 .page-in { animation: page-in .45s cubic-bezier(.2, .8, .2, 1) backwards; } /* backwards: no transform left behind, so position:fixed inside still works */

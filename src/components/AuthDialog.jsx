@@ -8,8 +8,10 @@ import { PASSWORD_MIN } from '../lib/phoneLogin.js'
 import { ErrorNote, Field, Sheet } from './ui.jsx'
 
 /**
- * Barber sign-in / sign-up dialog, opened by ?auth=in or ?auth=up on whatever page renders it
- * (the landing page; /admin redirects here when signed out). The URL holds it so back closes it.
+ * Sign-in / sign-up dialog for clients and barbers, opened by ?auth=in or ?auth=up (plus
+ * &as=client) on whatever page renders it (the landing page; /admin, /owner and /me redirect
+ * here when signed out). The URL holds it so back closes it. The role only picks where to go
+ * next: clients to /me, barbers to /admin, the platform admin to /owner.
  */
 export default function AuthDialog() {
   const { t } = useI18n()
@@ -17,15 +19,28 @@ export default function AuthDialog() {
   const location = useLocation()
   const [params, setParams] = useSearchParams()
   const mode = params.get('auth')
+  const as = params.get('as') === 'client' ? 'client' : 'barber'
   const close = useCallback(() => setParams({}, { replace: true }), [setParams])
-  const onSession = useCallback(() => navigate(location.state?.from || '/admin', { replace: true }), [navigate, location.state])
+  const onSession = useCallback(async () => {
+    let to = location.state?.from
+    if (!to) to = as === 'client' ? '/me' : (await api.isPlatformAdmin().catch(() => false)) ? '/owner' : '/admin'
+    navigate(to, { replace: true })
+  }, [navigate, location.state, as])
   const open = mode === 'in' || mode === 'up'
+  const go = (next) => setParams({ auth: next.mode, ...(next.as === 'client' ? { as: 'client' } : {}) }, { replace: true, state: location.state })
 
   return (
-    <Sheet open={open} onClose={close} title={mode === 'up' ? t('signUp') : t('barberLogin')}>
+    <Sheet open={open} onClose={close} title={mode === 'up' ? t('signUp') : as === 'client' ? t('signIn') : t('barberLogin')}>
       <div className="space-y-3">
+        <div className="soft flex rounded-full p-0.5 text-[14px] font-medium" role="group" aria-label={t('accountType')}>
+          {['client', 'barber'].map((r) => (
+            <button key={r} type="button" aria-pressed={as === r} onClick={() => go({ mode, as: r })}
+              className={`flex-1 rounded-full py-2 transition ${as === r ? 'bg-[var(--soft-strong)] c-title shadow-sm' : 'c-muted'}`}>{t(r === 'client' ? 'asClient' : 'asBarber')}</button>
+          ))}
+        </div>
+        <p className="c-muted text-[13px]">{t(as === 'client' ? 'clientAuthHint' : mode === 'up' ? 'barberSignupHint' : 'barberAuthHint')}</p>
         <PhoneAuthForm key={mode} mode={mode} onSession={onSession} />
-        <button type="button" onClick={() => setParams({ auth: mode === 'up' ? 'in' : 'up' }, { replace: true, state: location.state })} className="c-gold w-full text-center text-[14px] font-medium hover:underline">
+        <button type="button" onClick={() => go({ mode: mode === 'up' ? 'in' : 'up', as })} className="c-gold w-full text-center text-[14px] font-medium hover:underline">
           {mode === 'up' ? t('haveAccount') : t('noAccount')}
         </button>
       </div>
