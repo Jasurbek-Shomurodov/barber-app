@@ -79,6 +79,9 @@ export function createSupabaseApi(url, key) {
     async isPlatformAdmin() { return Boolean(unwrap(await sb.rpc('is_platform_admin'))) },
     async adminListShops() { return unwrap(await sb.rpc('admin_list_shops')) },
     async adminSetShopStatus(shopId, status) { unwrap(await sb.rpc('admin_set_shop_status', { p_shop: shopId, p_status: status })) },
+    /** One shop for /owner/:id: settings, services, upcoming bookings as times only, and the log. */
+    async adminShopOverview(shopId) { return unwrap(await sb.rpc('admin_shop_overview', { p_shop: shopId })) },
+    async adminAddNote(shopId, note) { return unwrap(await sb.rpc('admin_add_note', { p_shop: shopId, p_note: note })) },
     /** The signed-in client's own bookings across shops (no phones; tokens open /b/:token). */
     async myBookings() { return unwrap(await sb.rpc('my_bookings')) },
     onAuthChange(cb) {

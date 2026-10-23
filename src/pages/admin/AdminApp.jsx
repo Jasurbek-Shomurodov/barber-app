@@ -5,6 +5,7 @@ import { api } from '../../lib/api.js'
 import { useAsync } from '../../lib/useAsync.js'
 import { useI18n } from '../../lib/i18n.jsx'
 import { ErrorNote, Field, LangSwitch, Logo, Shimmer, ThemeSwitch } from '../../components/ui.jsx'
+import { Checklist } from '../../components/Checklist.jsx'
 import CalendarView from './CalendarView.jsx'
 import Services from './Services.jsx'
 import Clients from './Clients.jsx'
@@ -141,7 +142,7 @@ function Layout({ shop, setShop, onSignOut }) {
       </header>
 
       <main className="min-w-0 flex-1 px-4 pb-28 pt-4 md:px-8 md:pb-10 md:pt-8">
-        <StatusBanner status={shop.status} />
+        <StatusBanner shop={shop} />
         <Routes>
           <Route index element={<CalendarView shop={shop} />} />
           <Route path="services" element={<Services shop={shop} />} />
@@ -165,15 +166,35 @@ function Layout({ shop, setShop, onSignOut }) {
   )
 }
 
-/** Until the platform admin approves the shop, clients cannot see or book it. */
-function StatusBanner({ status }) {
+/** Until the platform admin approves the shop, clients cannot see or book it. A pending shop
+ *  also shows the approval checklist, the same one the admin ticks on /owner. */
+function StatusBanner({ shop }) {
   const { t } = useI18n()
+  const { status } = shop
   if (status !== 'pending' && status !== 'suspended') return null
   const Icon = status === 'pending' ? Clock : PauseCircle
   return (
-    <div className={`${status === 'pending' ? 'pill-warn' : 'pill-bad'} mb-5 flex items-start gap-3 rounded-2xl px-4 py-3 text-[14px]`} role="status">
-      <Icon size={18} className="mt-0.5 shrink-0" />
-      <div><div className="font-semibold">{t(`shopStatus_${status}`)}</div><div>{t(status === 'pending' ? 'pendingBanner' : 'suspendedBanner')}</div></div>
+    <div className={`${status === 'pending' ? 'pill-warn' : 'pill-bad'} mb-5 rounded-2xl px-4 py-3 text-[14px]`} role="status">
+      <div className="flex items-start gap-3">
+        <Icon size={18} className="mt-0.5 shrink-0" />
+        <div><div className="font-semibold">{t(`shopStatus_${status}`)}</div><div>{t(status === 'pending' ? 'pendingBanner' : 'suspendedBanner')}</div></div>
+      </div>
+      {status === 'pending' && <OnboardingChecklist shop={shop} />}
+    </div>
+  )
+}
+
+const CHECKLIST_LINKS = { phone: '/admin/settings', address: '/admin/settings', services: '/admin/services', telegram: '/admin/settings' }
+
+function OnboardingChecklist({ shop }) {
+  const { t } = useI18n()
+  const servicesQ = useAsync(() => api.listServices(shop.id, { all: true }), [shop.id, shop.status])
+  const services = servicesQ.data ? servicesQ.data.filter((v) => !v.archived).length : undefined
+  if (services === undefined) return <Shimmer className="mt-3 h-[120px] w-full rounded-2xl" />
+  return (
+    <div className="glass mt-3 rounded-2xl p-4">
+      <Checklist shop={{ ...shop, services, telegram_linked: shop.owner_chat_id != null }} links={CHECKLIST_LINKS} />
+      <p className="c-muted mt-2 text-[13px]">{t('checklistBarberHint')}</p>
     </div>
   )
 }

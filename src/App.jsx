@@ -18,7 +18,7 @@ export default function App() {
     <Routes>
       <Route path="/" element={<Landing />} />
       <Route path="/admin/*" element={<AdminApp />} />
-      <Route path="/owner" element={<OwnerApp />} />
+      <Route path="/owner/*" element={<OwnerApp />} />
       <Route path="/me" element={<MyBookings />} />
       <Route path="/b/:token" element={<BookingPage />} />
       <Route path="/:slug" element={<ShopPage />} />

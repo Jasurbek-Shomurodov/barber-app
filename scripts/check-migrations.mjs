@@ -1,6 +1,7 @@
 // Applies every migration to an in-memory Postgres (PGlite) and exercises the public RPCs:
 // double-booking, buffer, cancellation policy, blocked clients, closed dates, the notification
-// queue, the waitlist and roles (admin approval, client accounts, no entries in the past). Run: npm run sql:check
+// queue, the waitlist, roles (admin approval, client accounts, no entries in the past) and the
+// owner tools (audit log, notes, read-only overview). Run: npm run sql:check
 import fs from 'node:fs'
 import path from 'node:path'
 import assert from 'node:assert/strict'
@@ -43,8 +44,18 @@ await fails(`select create_booking($1, $2::uuid[], $3::date, 600, 'Aziz', '+998 
 
 await db.exec(`set test.uid = '${admin}'`)
 const listed = await q(`select * from admin_list_shops()`)
-assert.deepEqual(listed.map((r) => [r.slug, r.status, r.owner_name, r.services]), [['my-shop', 'pending', 'Barber Bek', 2]])
+assert.deepEqual(listed.map((r) => [r.slug, r.status, r.owner_name, r.services, r.telegram_linked, r.address, r.last_note]), [['my-shop', 'pending', 'Barber Bek', 2, true, '', '']])
+await fails(`select admin_add_note($1, '  ')`, [shop.id], 'note_required')
+await q(`select admin_add_note($1, 'Called, real shop')`, [shop.id])
 await q(`select admin_set_shop_status($1, 'approved')`, [shop.id])
+assert.equal((await q(`select * from admin_list_shops()`))[0].last_note, 'Called, real shop')
+const overview = (await q(`select admin_shop_overview($1) o`, [shop.id]))[0].o
+assert.equal(overview.shop.slug, 'my-shop'); assert.equal(overview.services.length, 2); assert.equal(overview.shop.telegram_linked, true)
+assert.deepEqual(overview.events.map((e) => [e.kind, e.from_status, e.to_status, e.by_admin]), [['status', 'pending', 'approved', true], ['note', null, null, true], ['created', null, 'pending', false]])
+await db.exec(`set test.uid = '${uid}'`)
+await fails(`select admin_add_note($1, 'nope')`, [shop.id], 'not_allowed')
+await fails(`select admin_shop_overview($1)`, [shop.id], 'not_allowed')
+await db.exec(`set test.uid = '${admin}'`)
 assert.deepEqual(await q(`select kind, chat_id::int c from notifications order by id`), [{ kind: 'new_barber', c: 4242 }, { kind: 'shop_approved', c: 777 }])
 await q(`delete from notifications`)
 await db.exec(`set test.uid = ''`) // anonymous client from here
@@ -56,6 +67,10 @@ await fails(`select create_booking($1, $2::uuid[], $3::date, 675, 'Bek', '+998 9
 assert.deepEqual((await q(`select kind, chat_id::int c from notifications order by id`)), [{ kind: 'new_booking', c: 777 }])
 assert.equal((await q(`select get_booking($1) b`, [tok]))[0].b.client_phone, undefined, 'phone never leaves get_booking')
 assert.equal((await q(`select * from get_busy($1, $2::date, $2::date)`, [shop.id, day])).length, 1)
+await db.exec(`set test.uid = '${admin}'`)
+const ov = (await q(`select admin_shop_overview($1) o`, [shop.id]))[0].o
+assert.equal(ov.upcoming.length, 1); assert.equal(JSON.stringify(ov).includes('Aziz'), false, 'overview never names clients'); assert.equal(JSON.stringify(ov).includes('123 45 67'), false)
+await db.exec(`set test.uid = ''`)
 
 await q(`update bookings set client_chat_id = 555 where token = $1`, [tok])
 assert.equal((await q(`select count(*)::int n from notifications where kind = 'reminder' and status = 'pending'`))[0].n, 2)

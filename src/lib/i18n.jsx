@@ -114,6 +114,14 @@ const en = {
   shopNotLiveNotice: 'Only you can see this page — clients cannot book until it is approved.',
   myBookings: 'My bookings', myBookingsEmpty: "No bookings yet. Open your barber's link to book a visit.", pastVisits: 'Past', openBooking: 'Open',
   signInToSave: 'to keep all your bookings in one place.', savedToAccount: 'This booking will be saved to My bookings.',
+  checklistTitle: 'Approval checklist', checklistProgress: '{done} of {total} done',
+  checklistBarberHint: 'Fill these in so the site owner can approve your page faster.',
+  check_owner_name: 'Owner name', check_phone: 'Phone number', check_address: 'Address', check_services: 'At least one service', check_telegram: 'Telegram linked',
+  ownerOpen: 'Open', ownerBack: 'All barbers', ownerReadOnly: 'Read-only view. The barber manages this page at /admin.',
+  ownerLog: 'Notes and log', ownerNotePlaceholder: 'Note for yourself: called, checked the address…', addNote: 'Add note', byYou: 'you',
+  event_created: 'Signed up', event_status: 'Status: {to}',
+  ownerUpcomingDays: 'Next 14 days', ownerUpcomingEmpty: 'No bookings in the next 14 days.', ownerNoServices: 'No services yet.',
+  err_note_required: 'Write a note first.',
 }
 
 const ru = {
@@ -226,6 +234,14 @@ const ru = {
   shopNotLiveNotice: 'Эту страницу видите только вы — клиенты смогут записаться после одобрения.',
   myBookings: 'Мои записи', myBookingsEmpty: 'Пока нет записей. Откройте ссылку вашего мастера, чтобы записаться.', pastVisits: 'Прошедшие', openBooking: 'Открыть',
   signInToSave: 'чтобы все записи были в одном месте.', savedToAccount: 'Запись сохранится в «Мои записи».',
+  checklistTitle: 'Чеклист одобрения', checklistProgress: 'Готово {done} из {total}',
+  checklistBarberHint: 'Заполните это, чтобы владелец сайта быстрее одобрил страницу.',
+  check_owner_name: 'Имя владельца', check_phone: 'Телефон', check_address: 'Адрес', check_services: 'Хотя бы одна услуга', check_telegram: 'Telegram подключён',
+  ownerOpen: 'Открыть', ownerBack: 'Все мастера', ownerReadOnly: 'Только просмотр. Мастер управляет страницей в /admin.',
+  ownerLog: 'Заметки и история', ownerNotePlaceholder: 'Заметка для себя: позвонил, проверил адрес…', addNote: 'Добавить', byYou: 'вы',
+  event_created: 'Зарегистрировался', event_status: 'Статус: {to}',
+  ownerUpcomingDays: 'Ближайшие 14 дней', ownerUpcomingEmpty: 'Нет записей на ближайшие 14 дней.', ownerNoServices: 'Услуг пока нет.',
+  err_note_required: 'Сначала напишите заметку.',
 }
 
 const uz = {
@@ -338,6 +354,14 @@ const uz = {
   shopNotLiveNotice: "Bu sahifani faqat siz ko'rasiz — mijozlar tasdiqlangandan keyin yozila oladi.",
   myBookings: 'Mening yozuvlarim', myBookingsEmpty: "Hali yozuvlar yo'q. Yozilish uchun ustangiz havolasini oching.", pastVisits: "O'tganlar", openBooking: 'Ochish',
   signInToSave: 'barcha yozuvlaringiz bir joyda bo\'lishi uchun.', savedToAccount: "Bu yozuv «Mening yozuvlarim»ga saqlanadi.",
+  checklistTitle: "Tasdiqlash ro'yxati", checklistProgress: '{total} tadan {done} tasi tayyor',
+  checklistBarberHint: "Sayt egasi sahifangizni tezroq tasdiqlashi uchun shularni to'ldiring.",
+  check_owner_name: 'Egasining ismi', check_phone: 'Telefon raqami', check_address: 'Manzil', check_services: 'Kamida bitta xizmat', check_telegram: 'Telegram ulangan',
+  ownerOpen: 'Ochish', ownerBack: 'Barcha ustalar', ownerReadOnly: "Faqat ko'rish. Usta sahifani /admin da boshqaradi.",
+  ownerLog: 'Izohlar va tarix', ownerNotePlaceholder: "O'zingiz uchun izoh: qo'ng'iroq qildim, manzilni tekshirdim…", addNote: "Qo'shish", byYou: 'siz',
+  event_created: "Ro'yxatdan o'tdi", event_status: 'Holat: {to}',
+  ownerUpcomingDays: 'Keyingi 14 kun', ownerUpcomingEmpty: "Keyingi 14 kunga yozuvlar yo'q.", ownerNoServices: "Hali xizmatlar yo'q.",
+  err_note_required: 'Avval izoh yozing.',
 }
 
 const DICTS = { en, ru, uz }

@@ -1,17 +1,20 @@
 import { useState } from 'react'
-import { Link, Navigate } from 'react-router-dom'
-import { CalendarDays, Clock, ExternalLink, Phone, Scissors, Send, Star } from 'lucide-react'
+import { Link, Navigate, Route, Routes } from 'react-router-dom'
+import { CalendarDays, ExternalLink, Scissors, Star } from 'lucide-react'
 import { api } from '../../lib/api.js'
 import { useI18n } from '../../lib/i18n.jsx'
 import { useAsync } from '../../lib/useAsync.js'
 import { useSession } from '../../lib/useSession.js'
 import AccountShell from '../../components/AccountShell.jsx'
+import { Checklist } from '../../components/Checklist.jsx'
 import { ErrorNote, Shimmer } from '../../components/ui.jsx'
+import ShopView from './ShopView.jsx'
+import { OwnerContacts, OwnerShimmer, STATUS_PILL, StatusActions } from './shared.jsx'
 
 const FILTERS = ['all', 'pending', 'approved', 'suspended']
-const STATUS_PILL = { pending: 'pill-warn', approved: 'pill-ok', suspended: 'pill-bad' }
 
-/** /owner: the platform admin's view of every barber on the site, with approval. */
+/** /owner: the platform admin's view of every barber on the site, with approval.
+ *  /owner/:shopId: one shop, read-only, with the admin's notes and the log. */
 export default function OwnerApp() {
   const session = useSession()
   if (session === null) return <Navigate to="/?auth=in" replace state={{ from: '/owner' }} />
@@ -34,16 +37,12 @@ function OwnerGate() {
       </AccountShell>
     )
   }
-  return <Owner />
-}
-
-function OwnerShimmer() {
   return (
-    <div className="space-y-4">
-      <Shimmer className="h-10 w-56" />
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">{[0, 1, 2, 3].map((i) => <Shimmer key={i} className="h-[84px] rounded-[22px]" />)}</div>
-      {[0, 1, 2].map((i) => <Shimmer key={i} className="h-[132px] w-full rounded-[24px]" />)}
-    </div>
+    <Routes>
+      <Route index element={<Owner />} />
+      <Route path=":shopId" element={<ShopView />} />
+      <Route path="*" element={<Navigate to="/owner" replace />} />
+    </Routes>
   )
 }
 
@@ -101,47 +100,35 @@ function Tile({ label, value, accent = false }) {
   )
 }
 
+
 function ShopCard({ shop: s, onStatus }) {
-  const { t, money, dateTime } = useI18n()
+  const { t, money } = useI18n()
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState(null)
-  const act = async (status) => {
-    setBusy(true); setError(null)
-    try { await onStatus(s, status) } catch (err) { setError(err) } finally { setBusy(false) }
-  }
   return (
     <li className="glass rounded-[24px] p-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
-            <h2 className="serif c-title text-[24px] font-semibold leading-tight">{s.name}</h2>
+            <h2 className="serif c-title text-[24px] font-semibold leading-tight"><Link to={`/owner/${s.id}`} className="hover:underline">{s.name}</Link></h2>
             <span className={`${STATUS_PILL[s.status]} rounded-full px-2.5 py-0.5 text-[12px] font-semibold`}>{t(`shopStatus_${s.status}`)}</span>
           </div>
           <a href={`/${s.slug}`} target="_blank" rel="noreferrer" className="c-gold mt-0.5 inline-flex items-center gap-1 text-[14px] hover:underline">/{s.slug}<ExternalLink size={13} /></a>
         </div>
-        <div className="flex gap-2">
-          {s.status !== 'approved' && (
-            <button type="button" disabled={busy} onClick={() => act('approved')} className="btn-primary rounded-full px-5 py-2 text-[14px] font-semibold">
-              {s.status === 'pending' ? t('approve') : t('reactivate')}
-            </button>
-          )}
-          {s.status !== 'suspended' && (
-            <button type="button" disabled={busy} onClick={() => act('suspended')} className="btn-ghost btn-danger rounded-full px-4 py-2 text-[14px] font-medium">{t('suspend')}</button>
-          )}
+        <div className="flex flex-wrap gap-2">
+          <Link to={`/owner/${s.id}`} className="btn-ghost rounded-full px-4 py-2 text-[14px] font-medium">{t('ownerOpen')}</Link>
+          <StatusActions shop={s} onStatus={onStatus} busy={busy} setBusy={setBusy} setError={setError} />
         </div>
       </div>
-      <div className="c-body mt-3 flex flex-wrap gap-x-5 gap-y-1.5 text-[14px]">
-        {s.owner_name && <span className="c-title font-medium">{s.owner_name}</span>}
-        {s.owner_phone && <a href={`tel:${s.owner_phone.replace(/\s/g, '')}`} className="flex items-center gap-1.5 hover:underline"><Phone size={14} className="c-gold" />{s.owner_phone}</a>}
-        {s.owner_telegram && <a href={`https://t.me/${s.owner_telegram}`} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 hover:underline"><Send size={14} className="c-gold" />@{s.owner_telegram}</a>}
-        <span className="c-muted flex items-center gap-1.5"><Clock size={14} />{t('ownerJoined')} {dateTime(s.created_at)}</span>
-      </div>
+      <div className="mt-3"><OwnerContacts shop={s} /></div>
+      {s.status === 'pending' && <div className="mt-3"><Checklist shop={s} compact /></div>}
       <dl className="soft mt-3 grid grid-cols-2 gap-3 rounded-2xl p-3 text-[13px] sm:grid-cols-4">
         <Stat icon={Scissors} label={t('nav_services')} value={s.services} />
         <Stat icon={CalendarDays} label={t('ownerUpcoming')} value={s.upcoming} />
         <Stat label={t('revenue')} value={`${s.visits} · ${money(s.revenue, s.currency)}`} />
         <Stat icon={Star} label={t('avgRating')} value={s.review_count ? `${Number(s.avg_rating).toFixed(1)} · ${s.review_count}` : '—'} />
       </dl>
+      {s.last_note && <p className="c-muted mt-3 truncate text-[13px]" title={s.last_note}>📝 {s.last_note}</p>}
       {error && <div className="mt-3"><ErrorNote error={error} /></div>}
     </li>
   )

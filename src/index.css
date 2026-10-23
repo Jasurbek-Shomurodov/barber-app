@@ -80,6 +80,7 @@ button { -webkit-tap-highlight-color: transparent; }
 .c-muted { color: var(--muted); }
 .c-gold { color: var(--gold); }
 .c-ok { color: var(--ok); }
+.c-warn { color: var(--warn); }
 .c-bad { color: var(--bad); }
 .b-line { border-color: var(--line); }
 .bg-page-2 { background: var(--page-2); }

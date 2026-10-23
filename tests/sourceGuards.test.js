@@ -41,12 +41,17 @@ test('public RPCs never return client phones', () => {
 })
 
 test('admin RPCs check the caller is a platform admin', () => {
-  const sql = read('migrations/005_roles.sql')
-  for (const fn of ['admin_list_shops', 'admin_set_shop_status']) {
-    const body = sql.slice(sql.indexOf(`create or replace function ${fn}`), sql.indexOf('end $$;', sql.indexOf(`create or replace function ${fn}`)))
+  const sql = fs.readdirSync(path.join(root, 'migrations')).map((f) => read(path.join('migrations', f))).join('\n')
+  for (const fn of ['admin_list_shops', 'admin_set_shop_status', 'admin_add_note', 'admin_shop_overview']) {
+    const at = Math.max(sql.lastIndexOf(`create or replace function ${fn}`), sql.lastIndexOf(`create function ${fn}`))
+    assert.ok(at >= 0, `${fn} missing`)
+    const body = sql.slice(at, sql.indexOf('end $$;', at))
     assert.match(body, /if not is_platform_admin\(\) then raise exception 'not_allowed'/, `${fn} lacks the admin check`)
   }
   assert.ok(!/create policy[^;]*platform_admins/i.test(sql), 'platform_admins must not be readable by clients')
+  const overview = sql.slice(sql.lastIndexOf('create or replace function admin_shop_overview'), sql.indexOf('end $$;', sql.lastIndexOf('create or replace function admin_shop_overview')))
+  assert.ok(!/client_name|client_phone|client_chat_id/.test(overview), 'admin_shop_overview exposes client data')
+  assert.ok(!/create policy[^;]*shop_events[^;]*(insert|update|delete|for all)/i.test(sql), 'shop_events must be written only by triggers and RPCs')
 })
 
 test('every migration is append-only: files are numbered and not renamed', () => {

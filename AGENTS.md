@@ -13,8 +13,9 @@ Booking without an account still works.
 
 | Area | Where |
 | --- | --- |
-| Routes | `src/App.jsx`: `/` landing, `/:slug` booking, `/b/:token` client's booking + feedback, `/admin/*` dashboard, `/owner` admin panel, `/me` client's bookings |
-| Roles | `migrations/005_roles.sql` (`platform_admins`, `shops.status`, `shops_guard`, `admin_*` RPCs, `my_bookings`), `src/pages/owner/OwnerApp.jsx`, `src/pages/MyBookings.jsx` |
+| Routes | `src/App.jsx`: `/` landing, `/:slug` booking, `/b/:token` client's booking + feedback, `/admin/*` dashboard, `/owner` admin panel, `/owner/:shopId` read-only shop view with notes and log, `/me` client's bookings |
+| Roles | `migrations/005_roles.sql` (`platform_admins`, `shops.status`, `shops_guard`, `admin_*` RPCs, `my_bookings`), `migrations/006_owner_tools.sql` (`shop_events` log, `admin_add_note`, `admin_shop_overview`), `src/pages/owner/`, `src/pages/MyBookings.jsx` |
+| Approval checklist | `src/lib/onboarding.js`: the same five items ticked by the admin on `/owner` and shown to a pending barber on `/admin` (`src/components/Checklist.jsx`) |
 | Slot and duration math | `src/lib/slots.js` (buffer, closed dates, lead time) |
 | Client and service stats | `src/lib/stats.js` |
 | Data layer | `src/lib/api.js` → `supabaseApi.js`; without `VITE_SUPABASE_*` the app shows a setup message |
@@ -36,6 +37,7 @@ npm run build
 
 - **Clients never read `bookings`.** They get busy intervals (no names/phones) via `get_busy`, their own booking through its secret token (`get_booking`), and, signed in, the bookings linked to their account (`my_bookings`, by `client_user_id`, never by phone). None of these return `client_phone`.
 - **Only the platform admin changes `shops.status`** (`shops_guard`; `admin_*` RPCs check `is_platform_admin()`). Unapproved shops are invisible to clients and `create_booking`/`join_waitlist` reject them.
+- **The admin sees shops, never their clients.** `admin_list_shops` returns aggregates and `admin_shop_overview` returns bookings as times, services and status only: no `client_name`, `client_phone` or chat id. Every status change and admin note lands in `shop_events` (written only by triggers and `admin_add_note`; the barber can read their own status changes, not the notes).
 - **Nothing starts in the past.** `bookings_not_in_past` rejects any insert before the running slot; the calendar mirrors it with `isPastStart`.
 - **The database decides availability.** Duration and price come from `services` inside `create_booking`; the exclusion constraint plus the buffer check reject overlaps; working hours, closed dates, lead time, booking window, blocked clients and cancellation hours and shop approval are enforced in SQL. The browser mirrors the rules in `slots.js` only to show free times.
 - **Booking history is a snapshot.** `service_names`, `total_price`, `duration_min` are copied at booking time; renaming or repricing a service never rewrites them. Services are archived, never deleted.
